@@ -7,11 +7,6 @@ IF NOT EXIST venv\ (
     python -m venv venv
 )
 
-IF NOT EXIST venv\ (
-    start install.bat
-    exit /b 0
-)
-
 IF "%VIRTUAL_ENV%"=="" (
     call venv\Scripts\activate.bat
 )
