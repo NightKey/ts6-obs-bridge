@@ -14,7 +14,7 @@ IF "%VIRTUAL_ENV%"=="" (
 call python -m pip install -r dependencies.txt --upgrade
 call python -m pip install pyinstaller
 if exist ".\dist\TeamSpeak-OBS-Bridge" rmdir /s /q ".\dist\TeamSpeak-OBS-Bridge"
-pyinstaller -w -n "TeamSpeak-OBS-Bridge-App" -F ./src/main.py --paths=./modules
+pyinstaller -w "TeamSpeak-OBS-Bridge-App" -F ./src/main.py --paths=./modules
 mkdir ".\dist\TeamSpeak-OBS-Bridge"
 move ".\dist\TeamSpeak-OBS-Bridge-App.exe" ".\dist\TeamSpeak-OBS-Bridge\TeamSpeak-OBS-Bridge-App.exe"
 mkdir ".\dist\TeamSpeak-OBS-Bridge\data"
