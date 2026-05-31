@@ -1,0 +1,70 @@
+from smdb_db_manager import DBManager, Version
+
+from . import Settings
+
+
+class Database(DBManager):
+    @DBManager.async_database_safe
+    @DBManager.async_during_init
+    @DBManager.async_timed
+    @DBManager.fail_with_exception
+    async def migrate_db(self, current: Version, target: Version) -> bool:
+        # No Migration needed for now
+        pass
+
+    @DBManager.async_database_safe
+    @DBManager.async_during_init
+    @DBManager.async_timed
+    @DBManager.fail_with_exception
+    async def init_db(self) -> None:
+        await self.db.execute(
+            f"""
+            CREATE TABLE IF NOT EXISTS settings (
+                teamspeak_ip TEXT NOT NULL UNIQUE,
+                teamspeak_port INTEGER NOT NULL,
+                teamspeak_api TEXT NOT NULL,
+                obs_ip TEXT NOT NULL UNIQUE,
+                obs_port INTEGER NOT NULL,
+                obs_password TEXT NOT NULL,
+                obs_scene TEXT NOT NULL
+            ) STRICT;
+            """
+        )
+
+    @DBManager.async_database_safe
+    @DBManager.with_fail_value(None)
+    @DBManager.async_timed
+    async def get_settings(self) -> Settings | None:
+        result = await self.db.execute_fetchall(
+            f"""SELECT teamspeak_ip, teamspeak_port, teamspeak_api, obs_ip, obs_port, obs_password, obs_scene FROM settings"""
+        )
+        if len(result) == 0: return None
+        return Settings(
+            teamspeak_ip=result[0][0],
+            teamspeak_port=result[0][1],
+            teamspeak_api=result[0][2],
+            obs_ip=result[0][3],
+            obs_port=result[0][4],
+            obs_password=result[0][5],
+            obs_scene=result[0][6]
+        )
+
+    @DBManager.async_database_safe
+    @DBManager.async_timed
+    async def upsert_settings(self, settings: Settings) -> bool:
+        await self.db.execute(
+            f"""INSERT OR REPLACE INTO settings (teamspeak_ip, teamspeak_port, teamspeak_api, obs_ip, obs_port, obs_password, obs_scene)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                settings.teamspeak_ip,
+                settings.teamspeak_port,
+                settings.teamspeak_api,
+                settings.obs_ip,
+                settings.obs_port,
+                settings.obs_password,
+                settings.obs_scene
+            )
+        )
+        await self.db.commit()
+        return True

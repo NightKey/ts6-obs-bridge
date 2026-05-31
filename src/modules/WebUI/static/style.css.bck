@@ -1,0 +1,376 @@
+/* General Reset & Variables */
+:root {
+    --bg-main: #0f172a;
+    --bg-card: #1e293b;
+    --border-color: #334155;
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --primary: #3b82f6;
+    --primary-hover: #2563eb;
+    --secondary: #10b981;
+    --secondary-hover: #059669;
+    --danger: #ef4444;
+    --danger-hover: #dc2626;
+    --input-bg: #0f172a;
+
+    /* Status Colors */
+    --status-red: #ef4444;
+    --status-green: #10b981;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+/* Dashboard Layout */
+.dashboard-container {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    width: 100%;
+    max-width: 650px;
+    padding: 32px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+}
+
+.dashboard-header {
+    margin-bottom: 28px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 16px;
+}
+
+.dashboard-header h1 {
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 6px;
+}
+
+.subtitle {
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+/* Form Sections & Header Alignment */
+.config-section {
+    margin-bottom: 28px;
+}
+
+.section-title-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-main);
+}
+
+.section-title h2 {
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.section-title .icon {
+    color: var(--primary);
+}
+
+/* Status Markers Styling */
+.status-marker {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    background-color: rgba(15, 23, 42, 0.4);
+    border: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    position: relative;
+}
+
+/* Status: Disconnected (Red State) */
+.status-marker.status-disconnected {
+    color: var(--status-red);
+    border-color: rgba(239, 68, 68, 0.2);
+}
+.status-marker.status-disconnected .status-dot {
+    background-color: var(--status-red);
+    box-shadow: 0 0 8px var(--status-red);
+}
+
+/* Status: Connected (Green State) */
+.status-marker.status-connected {
+    color: var(--status-green);
+    border-color: rgba(16, 185, 129, 0.2);
+}
+.status-marker.status-connected .status-dot {
+    background-color: var(--status-green);
+    box-shadow: 0 0 8px var(--status-green);
+}
+/* Live pulsing ring animation effect for active connection */
+.status-marker.status-connected .status-dot::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    border-radius: 50%;
+    background-color: var(--status-green);
+    animation: pulse-ring 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    z-index: -1;
+}
+
+@keyframes pulse-ring {
+    0% { transform: scale(0.95); opacity: 0.8; }
+    100% { transform: scale(2.5); opacity: 0; }
+}
+
+/* Form Styles */
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+.form-grid .form-grid {
+    grid-column: span 2;
+    margin: 0;
+    padding: 0;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.form-group.full-width {
+    grid-column: span 2;
+}
+
+label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.form-input {
+    background-color: var(--input-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 14px;
+    color: var(--text-main);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.form-input::placeholder {
+    color: #475569;
+}
+
+/* Footer / Button Styles */
+.action-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 32px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color);
+}
+
+.primary-actions {
+    display: flex;
+}
+
+.connection-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 12px;
+}
+
+.btn {
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 11px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.15s ease, transform 0.1s ease;
+    text-align: center;
+}
+
+.btn:active {
+    transform: scale(0.98);
+}
+
+.btn-primary {
+    background-color: var(--primary);
+    color: #ffffff;
+    width: 100%;
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-hover);
+}
+
+.btn-primary:disabled {
+    background-color: var(--primary);
+}
+
+.btn-secondary {
+    background-color: #334155;
+    color: var(--text-main);
+    border: 1px solid var(--border-color);
+}
+
+.btn-secondary:hover {
+    background-color: #475569;
+    border-color: #64748b;
+}
+
+.btn-primary:disabled {
+    background-color: #334155;
+    border-color: var(--border-color);
+}
+
+.btn-danger {
+    background-color: var(--danger);
+    color: #ffffff;
+    padding-left: 24px;
+    padding-right: 24px;
+}
+
+.btn-danger:hover {
+    background-color: var(--danger-hover);
+}
+
+/* Error Popup Core Styles */
+.error-popup-container {
+    position: fixed;
+    top: 50%;
+    right: 40%;
+    z-index: 1000;
+    max-width: 400px;
+    width: calc(100% - 48px);
+
+    /* Hidden by default, handles smooth transitions */
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-20px);
+    transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s;
+}
+
+/* Class added by JS to display the alert smoothly */
+.error-popup-container.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.error-popup-content {
+    background-color: #1e1b4b; /* Deep subtle crimson/purple tone */
+    border: 1px solid #ef4444; /* Bright red border */
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.4);
+}
+
+.error-popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.error-icon-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #fca5a5; /* Light soft red */
+}
+
+.error-icon-title h3 {
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+.error-icon {
+    color: #ef4444;
+}
+
+.error-close-btn {
+    background: none;
+    border: none;
+    color: #94a3b8;
+    font-size: 20px;
+    cursor: pointer;
+    line-height: 1;
+    padding: 4px;
+    transition: color 0.15s ease;
+}
+
+.error-close-btn:hover {
+    color: #f8fafc;
+}
+
+.error-popup-body {
+    font-size: 13px;
+    line-height: 1.5;
+    color: #cbd5e1; /* Clear readable description */
+}
+
+/* Responsive adjustments */
+@media (max-width: 500px) {
+    .form-grid, .form-grid .form-grid {
+        grid-template-columns: 1fr;
+    }
+    .form-grid .form-grid {
+        grid-column: span 1;
+    }
+    .form-group.full-width {
+        grid-column: span 1;
+    }
+    .connection-actions {
+        grid-template-columns: 1fr;
+    }
+    .section-title-container {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+}

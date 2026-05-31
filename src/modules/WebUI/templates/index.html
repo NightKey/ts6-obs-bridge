@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page_title }}</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <header class="dashboard-header">
+            <h1>{{ page_title }}</h1>
+            <p class="subtitle">Manage TeamSpeak and OBS Studio connections</p>
+        </header>
+
+        <form id="configForm" onsubmit="return false;">
+            <section class="config-section">
+                <div class="section-title-container">
+                    <div class="section-title">
+                        <svg class="icon" viewBox="0 0 24 24" width="24" height="24">
+                            <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.75z"/>
+                        </svg>
+                        <h2>TeamSpeak Settings</h2>
+                    </div>
+                    <div id="ts_status" class="status-marker status-disconnected">
+                        <span class="status-dot"></span>
+                        <span class="status-text">Disconnected</span>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="teamspeak_ip">Server IP</label>
+                        <input type="text" id="teamspeak_ip" name="teamspeak_ip" placeholder="127.0.0.1" class="form-input">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="teamspeak_port">Query Port</label>
+                        <input type="number" id="teamspeak_port" name="teamspeak_port" placeholder="5899" class="form-input">
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label for="teamspeak_api">API Token</label>
+                        <input type="password" id="teamspeak_api" name="teamspeak_api" placeholder="When connecting to team speak 6 client, allow the connection" class="form-input" disabled>
+                    </div>
+                </div>
+            </section>
+
+            <section class="config-section">
+                <div class="section-title-container">
+                    <div class="section-title">
+                        <svg class="icon" viewBox="0 0 24 24" width="24" height="24">
+                            <path fill="currentColor" d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4zM14 13h-3v3H9v-3H6v-2h3V8h2v3h3v2z"/>
+                        </svg>
+                        <h2>OBS Studio Settings</h2>
+                    </div>
+                    <div id="obs_status" class="status-marker status-disconnected">
+                        <span class="status-dot"></span>
+                        <span class="status-text">Disconnected</span>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="obs_ip">WebSocket IP</label>
+                            <input type="text" id="obs_ip" name="obs_ip" placeholder="127.0.0.1" class="form-input">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="obs_port">WebSocket Port</label>
+                            <input type="number" id="obs_port" name="obs_port" placeholder="4455" class="form-input">
+                        </div>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="obs_password">Server Password</label>
+                            <input type="password" id="obs_password" name="obs_password" placeholder="Enter OBS Password" class="form-input">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="obs_scene">Scene Name</label>
+                            <input type="text" id="obs_scene" name="obs_scene" placeholder="Scene" class="form-input">
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <footer class="action-footer">
+                <div class="primary-actions">
+                    <button type="button" id="btnSave" class="btn btn-primary">
+                        Save Configuration
+                    </button>
+                </div>
+                <div class="connection-actions">
+                    <button type="button" id="btnConnectTS" class="btn btn-secondary">Connect TeamSpeak</button>
+                    <button type="button" id="btnConnectOBS" class="btn btn-secondary">Connect OBS</button>
+                    <button type="button" id="btnStop" class="btn btn-danger">Stop All</button>
+                </div>
+            </footer>
+        </form>
+    </div>
+    <div id="errorPopup" class="error-popup-container">
+        <div class="error-popup-content">
+            <div class="error-popup-header">
+                <div class="error-icon-title">
+                    <svg class="error-icon" viewBox="0 0 24 24" width="20" height="20">
+                        <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                    </svg>
+                    <h3 id="errorPopupTitle">Error</h3>
+                </div>
+                <button type="button" id="btnCloseError" class="error-close-btn" aria-label="Close warning">&times;</button>
+            </div>
+            <div class="error-popup-body">
+                <p id="errorMessage">An unexpected error occurred while communicating with the server.</p>
+            </div>
+        </div>
+    </div>
+    <script src="/static/script.js"></script>
+</body>
+</html>

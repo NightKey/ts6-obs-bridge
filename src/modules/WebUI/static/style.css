@@ -1,0 +1,522 @@
+/* ==========================================================================
+   1. GLOBAL VARIABLES & COLOR PALETTE
+   ========================================================================== */
+:root {
+    /* Requested Color Palette Constants */
+    --color-main-dark: #2E3444;
+    --color-main-light: #5A6585;
+    --color-sec-dark: #174F75;
+    --color-sec-light: #A5C9E2;
+    --color-special-dark: #695163;
+    --color-special-light: #C9BCBD;
+    --color-highlight: #900504;
+
+    /* Strict Functional Status Markers */
+    --status-green: #2ecc71;
+    --status-red: #e74c3c;
+
+    /* Theme Layout Mappings */
+    --bg-app: var(--color-main-dark);
+    --bg-card: rgba(23, 79, 117, 0.15);
+    --border-subtle: rgba(165, 201, 226, 0.15);
+    --text-primary: #ffffff;
+    --text-muted: var(--color-special-light);
+}
+
+/* ==========================================================================
+   2. MAIN DASHBOARD PAGE LAYOUT (Aligns to your provided HTML)
+   ========================================================================== */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--bg-app);
+    color: var(--text-primary);
+    min-height: 100vh;
+    padding: 2rem;
+    line-height: 1.5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Dashboard Container Block */
+.dashboard-container {
+    width: 100%;
+    max-width: 800px;
+    background-color: rgba(90, 101, 133, 0.08);
+    border: 1px solid var(--border-subtle);
+    border-radius: 16px;
+    padding: 2.5rem;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+}
+
+.dashboard-header {
+    margin-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-subtle);
+    padding-bottom: 0.5rem;
+}
+
+.dashboard-header h1 {
+    color: var(--color-sec-light);
+    font-size: 2.25rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    margin-bottom: 0.5rem;
+}
+
+.dashboard-header .subtitle {
+    color: var(--text-muted);
+    font-size: 1rem;
+}
+
+/* Sections Inside Form */
+.config-section {
+    background-color: rgba(23, 79, 117, 0.1);
+    border: 1px solid rgba(165, 201, 226, 0.1);
+    border-radius: 12px;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.section-title-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    border-bottom: 1px solid rgba(165, 201, 226, 0.1);
+    padding-bottom: 0.75rem;
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #ffffff;
+}
+
+.section-title h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.icon {
+    color: var(--color-sec-light);
+}
+
+/* Form Layout Grids */
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--color-sec-light);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+/* Input Fields styling using Lighter Main Color */
+.form-input {
+    background-color: rgba(46, 52, 68, 0.6);
+    border: 1px solid var(--color-main-light);
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+    color: #ffffff;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--color-sec-light);
+    box-shadow: 0 0 0 3px rgba(165, 201, 226, 0.15);
+}
+
+.form-input:disabled {
+    background-color: rgba(46, 52, 68, 0.9);
+    border-color: rgba(90, 101, 133, 0.3);
+    color: var(--color-special-light);
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+/* Status Markers for Connections */
+.status-marker {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 20px;
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.status-connected { color: var(--status-green); }
+.status-connected .status-dot { background-color: var(--status-green); }
+
+.status-disconnected { color: var(--color-special-light); }
+.status-disconnected .status-dot { background-color: var(--status-red); }
+
+/* Dashboard Actions Footer Buttons */
+.action-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+    border-top: 1px solid var(--border-subtle);
+    padding-top: 0.75rem;
+}
+
+.primary-actions {
+    width: 100%;
+}
+
+.connection-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.btn {
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.btn-primary {
+    background-color: var(--color-sec-dark);
+    color: #ffffff;
+    border-color: rgba(165, 201, 226, 0.2);
+    width: 100%;
+}
+
+.btn-primary:hover {
+    background-color: #1f6494;
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background-color: rgba(90, 101, 133, 0.2);
+    color: var(--color-sec-light);
+    border-color: rgba(165, 201, 226, 0.2);
+    flex: 1;
+    min-width: 140px;
+}
+
+.btn-secondary:hover {
+    background-color: rgba(90, 101, 133, 0.4);
+    color: #ffffff;
+}
+
+.btn-danger {
+    background-color: var(--color-highlight); /* Highlight Color #900504 */
+    color: #ffffff;
+}
+
+.btn-danger:hover {
+    filter: brightness(1.2);
+    transform: translateY(-1px);
+}
+
+/* Error Modal Windows Styling */
+.error-popup-container {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: none; /* Controlled via script.js */
+    justify-content: center; align-items: center;
+    z-index: 9999;
+    backdrop-filter: blur(4px);
+}
+
+.error-popup-content {
+    background-color: var(--color-main-dark);
+    border: 2px solid var(--color-highlight);
+    border-radius: 12px;
+    width: 90%; max-width: 450px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    overflow: hidden;
+}
+
+.error-popup-header {
+    background-color: rgba(144, 5, 4, 0.15);
+    padding: 1rem 1.25rem;
+    display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 1px solid rgba(144, 5, 4, 0.2);
+}
+
+.error-icon-title {
+    display: flex; align-items: center; gap: 8px; color: var(--status-red);
+}
+
+.error-close-btn {
+    background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer;
+}
+
+.error-popup-body {
+    padding: 1.5rem; color: var(--color-special-light);
+}
+
+/* ==========================================================================
+   3. TEAMSPEAK & OBS WIDGET NAMESPACED THEMING (.voice-widget-theme)
+   ========================================================================== */
+.voice-widget-theme {
+    background-color: var(--color-main-dark);
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+.voice-widget-theme .container {
+    width: 100%;
+    max-width: 480px;
+    background-color: rgba(90, 101, 133, 0.1);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border-subtle);
+    border-radius: 16px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    top: 20px;
+    position: absolute;
+    left: 40%;
+}
+
+.voice-widget-theme .header {
+    padding: 1.25rem 1.5rem;
+    background: linear-gradient(135deg, var(--color-sec-dark), rgba(23, 79, 117, 0.4));
+    border-bottom: 1px solid var(--border-subtle);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.voice-widget-theme .header h1 {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.voice-widget-theme .live-indicator {
+    display: flex;
+    align-items: center;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-sec-light);
+    background-color: rgba(255, 255, 255, 0.1);
+    padding: 4px 8px;
+    border-radius: 6px;
+}
+
+.voice-widget-theme .live-indicator::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    background-color: var(--status-green);
+    border-radius: 50%;
+    margin-right: 6px;
+    animation: modern-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.voice-widget-theme .user-list {
+    list-style: none;
+    max-height: 450px;
+    overflow-y: auto;
+    padding: 0.75rem;
+}
+
+.voice-widget-theme .user-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.5rem;
+    border-radius: 10px;
+    background-color: rgba(255, 255, 255, 0.02);
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.voice-widget-theme .user-item:hover {
+    background-color: rgba(90, 101, 133, 0.15);
+    border-color: rgba(165, 201, 226, 0.1);
+    transform: translateY(-1px);
+}
+
+.voice-widget-theme .user-info {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.voice-widget-theme .user-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.voice-widget-theme .user-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--color-sec-light);
+}
+
+.voice-widget-theme .user-id {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.voice-widget-theme .avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background-color: var(--color-main-dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.8rem;
+    border: 2px solid var(--color-main-light);
+    color: var(--color-main-light);
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+
+.voice-widget-theme .status-badge {
+    font-size: 0.7rem;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+}
+
+.voice-widget-theme .empty-state {
+    padding: 3rem 1.5rem;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.queue-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-sec-light);
+    background-color: rgba(0, 0, 0, 0.2);
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border-subtle);
+}
+
+.queue-count {
+    font-size: 0.85rem;
+    transition: color 0.2s ease;
+}
+
+/* Dynamic status coloring managed via our logic thresholds */
+.queue-normal { color: var(--status-green); }
+.queue-warning { color: var(--status-red); }
+
+/* Layout fix for secondary layout adjustments */
+.voice-widget-theme .header-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* ==========================================================================
+   4. STATS-DRIVEN MODIFIERS & STATES (Green / Red / Highlights Mapping)
+   ========================================================================== */
+.voice-widget-theme .user-item.status-quiet .avatar { border-color: var(--color-main-light); color: var(--color-main-light); }
+.voice-widget-theme .user-item.status-quiet .status-badge { background-color: rgba(90, 101, 133, 0.15); color: var(--color-main-light); }
+
+/* Speaking / Active (Green Status Marker) */
+.voice-widget-theme .user-item.status-speaking { background-color: rgba(46, 204, 113, 0.06); border-color: rgba(46, 204, 113, 0.15); }
+.voice-widget-theme .user-item.status-speaking .avatar { border-color: var(--status-green); color: var(--status-green); background-color: rgba(46, 204, 113, 0.1); }
+.voice-widget-theme .user-item.status-speaking .status-badge { background-color: rgba(46, 204, 113, 0.15); color: var(--status-green); }
+.voice-widget-theme .user-item.status-speaking .user-name { color: #ffffff; }
+
+/* Muted / Suspended (Red Status Marker + Highlight Palette Color) */
+.voice-widget-theme .user-item.status-muted .avatar { border-color: var(--status-red); color: var(--status-red); }
+.voice-widget-theme .user-item.status-muted .status-badge { background-color: var(--color-highlight); color: #ffffff; }
+
+/* Left Channel (Muted Special Dark Tones) */
+.voice-widget-theme .user-item.status-left { opacity: 0.45; }
+.voice-widget-theme .user-item.status-left .avatar { border-color: var(--color-special-dark); color: var(--color-special-dark); }
+.voice-widget-theme .user-item.status-left .status-badge { background-color: rgba(105, 81, 99, 0.2); color: var(--color-special-light); }
+
+/* ==========================================================================
+   5. OBS NESTED METADATA EXTENSIONS
+   ========================================================================== */
+.voice-widget-theme .scene-sources {
+    margin-top: 0.6rem;
+    padding-left: 0.25rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.voice-widget-theme .source-tag {
+    font-size: 0.65rem;
+    font-weight: 500;
+    background-color: var(--color-main-dark);
+    color: var(--color-special-light);
+    padding: 3px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border-subtle);
+}
+
+.voice-widget-theme .user-item.status-speaking .source-tag {
+    color: var(--color-sec-light);
+    border-color: rgba(165, 201, 226, 0.25);
+    background-color: rgba(23, 79, 117, 0.3);
+}
+
+/* ==========================================================================
+   6. ANIMATIONS
+   ========================================================================== */
+@keyframes modern-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: .4; transform: scale(0.92); }
+}

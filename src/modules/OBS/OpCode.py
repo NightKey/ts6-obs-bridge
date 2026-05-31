@@ -1,0 +1,14 @@
+from enum import Enum
+
+
+class OpCode(Enum):
+    Hello = 0
+    Identify = 1
+    Identified = 2
+    ReIdentify = 3
+    # ?? = 4
+    Event = 5
+    Request = 6
+    RequestResponse = 7
+    RequestBatch = 8
+    RequestBatchResponse = 9
