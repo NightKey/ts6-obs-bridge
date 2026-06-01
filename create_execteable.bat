@@ -22,4 +22,5 @@ mkdir "dist\TeamSpeak-OBS-Bridge-App\_internal\modules\WebUI\templates"
 robocopy "src\modules\WebUI\static" "dist\TeamSpeak-OBS-Bridge-App\_internal\modules\WebUI\static" /e /copyall /r:0
 robocopy "src\modules\WebUI\templates" "dist\TeamSpeak-OBS-Bridge-App\_internal\modules\WebUI\templates" /e /copyall /r:0
 del "dist\TeamSpeak-OBS-Bridge-App-Windows.zip"
-tar -cvzf "dist\TeamSpeak-OBS-Bridge-App-Windows.zip" "dist\TeamSpeak-OBS-Bridge-App"
+cd dist
+tar -a -cvf "TeamSpeak-OBS-Bridge-App-Windows.zip" "TeamSpeak-OBS-Bridge-App"
