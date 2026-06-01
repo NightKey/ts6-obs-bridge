@@ -12,11 +12,16 @@ When started, a web UI will be hosted on http://127.0.0.1:12345.
 If the ports and IPs are correct, you just need to fill in the password and the scene name for OBS.
 
 ## Team Speak
+> [!CAUTION]
+> For the use, you need to connect to the server you want to use for the stream on Team Speak before connecting the application to it.
+
 For Team Speak, when you click on connect, the application will request an API key from Team Speak.
 
 ![teamspeak_settings](resources/teamspeak_settings.png)
 
 You will need to allow the application to create an API key for it, and save it to the application's database.
+
+![teamspeak_allow](resources/teamspeak_allow.png)
 
 When connected you will be able to click on the "CONNECTED" marker to open a diagnostic page for the connection with basic information.
 

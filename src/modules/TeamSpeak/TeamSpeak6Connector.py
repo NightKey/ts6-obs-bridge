@@ -90,8 +90,9 @@ class TeamSpeak6Connector:
         self.logger.debug("Authenticated")
         self.logger.trace(f"Response: {response}")
         self.websocket = websocket
-        if len(response["payload"]["connections"]) > 0:
-            await self.load_clients_present(response["payload"]["connections"][0]["clientId"],  response["payload"]["connections"][0]["clientInfos"])
+        if len(response["payload"]["connections"]) == 0:
+            raise TeamSpeakException(f"Please connect to a server")
+        await self.load_clients_present(response["payload"]["connections"][0]["clientId"],  response["payload"]["connections"][0]["clientInfos"])
         self.logger.debug(f"User id: {self.user.id}")
 
         create_task(self.receive_loop())
@@ -118,7 +119,7 @@ class TeamSpeak6Connector:
         self.websocket = None
 
     async def receive_loop(self) -> None:
-        while not self.stop_event.is_set():
+        while not self.stop_event.is_set() and self.websocket is not None:
             try:
                 async with timeout(0.5):
                     message = loads(await self.websocket.recv())
@@ -218,6 +219,7 @@ class TeamSpeak6Connector:
                 self.logger.error("Connection closed with error", cce)
                 self.connection_failed_callback(Status.TeamSpeakNotReady)
                 await self.websocket.close()
+                self.websocket = None
             except Exception as ex:
                 self.logger.error("Error during retrieving message", ex)
 
