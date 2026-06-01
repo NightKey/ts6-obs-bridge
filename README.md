@@ -1,6 +1,6 @@
 # Team Speak 6 - OBS Bridge
 This is a Utility created for a streamer friend.
-When a user that you have everything setup in OBS joins or leaves the call, the icons you set them up will behave as expected.
+When a user that you have everything already set up for in OBS, joins or leaves the Team Speak channel, the icons will behave as expected.
 When you mute a user, there is a way to have a `muted` state to them so you can visibly silence them.
 
 When started, a web UI will be hosted on http://127.0.0.1:12345.
@@ -9,7 +9,7 @@ When started, a web UI will be hosted on http://127.0.0.1:12345.
 
 ![main_page](resources/main_page.png)
 
-If the ports and IP are correct, you just need to fill in the password and the scene name for OBS.
+If the ports and IPs are correct, you just need to fill in the password and the scene name for OBS.
 
 ## Team Speak
 For Team Speak, when you click on connect, the application will request an API key from Team Speak.
