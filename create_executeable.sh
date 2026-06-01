@@ -12,9 +12,12 @@ fi
 
 pip install -r dependencies.txt --upgrade
 pip install pyinstaller
-rm -rf "./dist/TeamSpeak-OBS-Bridge"
-pyinstaller -w -n "TeamSpeak-OBS-Bridge-App" -F ./src/main.py --paths=./modules
-mkdir "./dist/TeamSpeak-OBS-Bridge"
-mv "./dist/TeamSpeak-OBS-Bridge-App" "./dist/TeamSpeak-OBS-Bridge/TeamSpeak-OBS-Bridge-App"
-mkdir "./dist/TeamSpeak-OBS-Bridge/data"
-cp "./src/data/levels" "./dist/TeamSpeak-OBS-Bridge/data/levels"
+rm -rf "dist/TeamSpeak-OBS-Bridge-App"
+pyinstaller -n "TeamSpeak-OBS-Bridge-App" -D src/main.py --paths=./modules
+mkdir "dist/TeamSpeak-OBS-Bridge-App/data"
+cp "src/data/levels" "dist/TeamSpeak-OBS-Bridge-App/data/levels"
+mkdir -p "./dist/TeamSpeak-OBS-Bridge-App/_internal/modules/WebUI"
+cp -r "src/modules/WebUI/static" "dist/TeamSpeak-OBS-Bridge-App/_internal/modules/WebUI/static"
+cp -r "src/modules/WebUI/templates" "dist/TeamSpeak-OBS-Bridge-App/_internal/modules/WebUI/templates"
+rm "dist/TeamSpeak-OBS-Bridge-App-Linux.tar.gz"
+tar -czvf "dist/TeamSpeak-OBS-Bridge-App-Linux.tar.gz" "dist/TeamSpeak-OBS-Bridge-App"

@@ -13,9 +13,13 @@ IF "%VIRTUAL_ENV%"=="" (
 
 call python -m pip install -r dependencies.txt --upgrade
 call python -m pip install pyinstaller
-if exist ".\dist\TeamSpeak-OBS-Bridge" rmdir /s /q ".\dist\TeamSpeak-OBS-Bridge"
-pyinstaller -w "TeamSpeak-OBS-Bridge-App" -F ./src/main.py --paths=./modules
-mkdir ".\dist\TeamSpeak-OBS-Bridge"
-move ".\dist\TeamSpeak-OBS-Bridge-App.exe" ".\dist\TeamSpeak-OBS-Bridge\TeamSpeak-OBS-Bridge-App.exe"
-mkdir ".\dist\TeamSpeak-OBS-Bridge\data"
-copy ".\src\data\levels" ".\dist\TeamSpeak-OBS-Bridge\data\levels"
+if exist "dist\TeamSpeak-OBS-Bridge-App" rmdir /s /q "dist\TeamSpeak-OBS-Bridge-App"
+pyinstaller -n "TeamSpeak-OBS-Bridge-App" -D src\main.py --paths=.\modules
+mkdir "dist\TeamSpeak-OBS-Bridge-App\data"
+copy "src\data\levels" "dist\TeamSpeak-OBS-Bridge-App\data\levels"
+mkdir "dist\TeamSpeak-OBS-Bridge-App\_internal\modules\WebUI\static"
+mkdir "dist\TeamSpeak-OBS-Bridge-App\_internal\modules\WebUI\templates"
+robocopy "src\modules\WebUI\static" "dist\TeamSpeak-OBS-Bridge-App\_internal\modules\WebUI\static" /e /copyall /r:0
+robocopy "src\modules\WebUI\templates" "dist\TeamSpeak-OBS-Bridge-App\_internal\modules\WebUI\templates" /e /copyall /r:0
+del "dist\TeamSpeak-OBS-Bridge-App-Windows.zip"
+tar -cvzf "dist\TeamSpeak-OBS-Bridge-App-Windows.zip" "dist\TeamSpeak-OBS-Bridge-App"

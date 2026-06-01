@@ -61,7 +61,6 @@ class WebUI:
 
 
     def start(self) -> None:
-        self.logger.info("Serving webUI on port 12345")
         self.server.serve_forever(templates=templates.__dict__, static=static.__dict__)
 
     def index(self, _) -> str:
@@ -81,12 +80,12 @@ class WebUI:
 
     async def update_settings(self, url_data: UrlData) -> str:
         await self.update_settings_callback(Settings.from_json(loads(url_data.data.decode())))
-        return "done"
+        return "{}"
 
     def get_settings(self, _: UrlData) -> str:
         settings = self.get_settings_callback()
         if settings is None:
-            return ""
+            return "{}"
         return dumps(settings.to_json())
 
     def get_state(self, _: UrlData) -> str:
@@ -107,7 +106,7 @@ class WebUI:
 
     async def stop_all(self, _: UrlData) -> str:
         await self.stop_all_callback()
-        return "done"
+        return "{}"
 
     def close(self):
         self.server.stop()

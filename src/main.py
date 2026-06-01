@@ -97,6 +97,7 @@ class Main:
         return bool(self.status & Status.TeamSpeakReady), bool(self.status & Status.OBSReady)
 
     def start_web_ui(self):
+        self.logger.info("Serving webUI at http://127.0.0.1:12345")
         self.web_ui.start()
 
     def get_settings(self) -> Settings:
