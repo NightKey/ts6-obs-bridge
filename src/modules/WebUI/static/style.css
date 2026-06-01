@@ -252,43 +252,81 @@ label {
     transform: translateY(-1px);
 }
 
-/* Error Modal Windows Styling */
+/* Error Popup Core Styles */
 .error-popup-container {
     position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background-color: rgba(0, 0, 0, 0.6);
-    display: none; /* Controlled via script.js */
-    justify-content: center; align-items: center;
-    z-index: 9999;
-    backdrop-filter: blur(4px);
+    top: 40%;
+    right: 40%;
+    z-index: 1000;
+    max-width: 400px;
+    width: calc(100% - 48px);
+
+    /* Hidden by default, handles smooth transitions */
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-20px);
+    transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s;
+}
+
+/* Class added by JS to display the alert smoothly */
+.error-popup-container.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
 }
 
 .error-popup-content {
-    background-color: var(--color-main-dark);
-    border: 2px solid var(--color-highlight);
-    border-radius: 12px;
-    width: 90%; max-width: 450px;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
-    overflow: hidden;
+    background-color: var(--color-special-dark);
+    border: 1px solid var(--color-special-light); /* Bright red border */
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.4);
 }
 
 .error-popup-header {
-    background-color: rgba(144, 5, 4, 0.15);
-    padding: 1rem 1.25rem;
-    display: flex; justify-content: space-between; align-items: center;
-    border-bottom: 1px solid rgba(144, 5, 4, 0.2);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
 }
 
 .error-icon-title {
-    display: flex; align-items: center; gap: 8px; color: var(--status-red);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #fca5a5;
+}
+
+.error-icon-title h3 {
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+.error-icon {
+    color: #ef4444;
 }
 
 .error-close-btn {
-    background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer;
+    background: none;
+    border: none;
+    color: #94a3b8;
+    font-size: 20px;
+    cursor: pointer;
+    line-height: 1;
+    padding: 4px;
+    transition: color 0.15s ease;
+}
+
+.error-close-btn:hover {
+    color: #f8fafc;
 }
 
 .error-popup-body {
-    padding: 1.5rem; color: var(--color-special-light);
+    font-size: 13px;
+    line-height: 1.5;
+    text-align: center;
+    color: #cbd5e1; /* Clear readable description */
 }
 
 /* ==========================================================================

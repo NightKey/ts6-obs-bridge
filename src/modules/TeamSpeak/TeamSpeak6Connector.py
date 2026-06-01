@@ -90,7 +90,8 @@ class TeamSpeak6Connector:
         self.logger.debug("Authenticated")
         self.logger.trace(f"Response: {response}")
         self.websocket = websocket
-        await self.load_clients_present(response["payload"]["connections"][0]["clientId"],  response["payload"]["connections"][0]["clientInfos"])
+        if len(response["payload"]["connections"]) > 0:
+            await self.load_clients_present(response["payload"]["connections"][0]["clientId"],  response["payload"]["connections"][0]["clientInfos"])
         self.logger.debug(f"User id: {self.user.id}")
 
         create_task(self.receive_loop())

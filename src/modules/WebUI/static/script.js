@@ -9,7 +9,7 @@ async function apiFetch(endpoint, options = {}) {
             const parser = new DOMParser();
             const doc = parser.parseFromString(errorMessage, 'text/html');
 
-            var errorMessage = doc.body.textContent;
+            var errorMessage = doc.body.lastChild.data;
         }
         showError(errorMessage, `API Error on [${endpoint}]`);
         return null;
