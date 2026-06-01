@@ -205,6 +205,8 @@ class OBSConnector:
 
     async def change_state(self, user: str, from_state: UserStatus | None, target_state: UserStatus) -> None:
         self.logger.info(f"Changing {user} state from {from_state} to {target_state}")
+        if user not in self.user_scenes:
+            return
         (scene, present) = self.user_scenes[user]
         self.user_scenes[user] = (scene, target_state.name != UserStatus.Left.name)
         requests = []
