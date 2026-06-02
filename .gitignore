@@ -2,5 +2,5 @@ build*
 dist*
 venv*
 .idea*
-*.db
+*.db*
 *.spec

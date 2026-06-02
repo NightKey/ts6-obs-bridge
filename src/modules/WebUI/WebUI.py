@@ -14,6 +14,7 @@ class WebUI:
     logger: Logger
     get_settings_callback: Callable[[], Settings]
     update_settings_callback: Callable[[Settings], Coroutine[Any, Any, None]]
+    toggle_autoconnect_callback: Callable[[bool], Coroutine[Any, Any, None]]
     get_state_callback: Callable[[], Tuple[bool, bool]]
     connect_obs_callback: Callable[[], Coroutine[Any, Any, bool]]
     connect_teamspeak_callback: Callable[[], Coroutine[Any, Any, bool]]
@@ -32,7 +33,8 @@ class WebUI:
             connect_teamspeak_callback: Callable[[], Coroutine[Any, Any, bool]],
             stop_all_callback: Callable[[], Coroutine[Any, Any, None]],
             ts_user_map_callback: Callable[[], List[dict]],
-            obs_scene_map_callback: Callable[[], dict]
+            obs_scene_map_callback: Callable[[], dict],
+            toggle_autoconnect_callback: Callable[[bool], Coroutine[Any, Any, None]]
     ):
         self.logger = logger
         self.get_settings_callback = get_settings_callback
@@ -43,10 +45,12 @@ class WebUI:
         self.stop_all_callback = stop_all_callback
         self.ts_user_map_callback = ts_user_map_callback
         self.obs_scene_map_callback = obs_scene_map_callback
+        self.toggle_autoconnect_callback = toggle_autoconnect_callback
         self.server = HTMLServer(host="127.0.0.1", port=12345, root_path=path.dirname(__file__), logger=logger, title="Stream Control Panel")
         # Main page
         self.server.add_url_rule("/", self.index)
         self.server.add_url_rule("/update_settings", self.update_settings, Protocol.Post)
+        self.server.add_url_rule("/toggle_autoconnect", self.toggle_autoconnect, Protocol.Post)
         self.server.add_url_rule("/get_settings", self.get_settings, disable_cache=True)
         self.server.add_url_rule("/get_state", self.get_state, disable_cache=True)
         self.server.add_url_rule("/connect_obs", self.connect_obs)
@@ -80,6 +84,10 @@ class WebUI:
 
     async def update_settings(self, url_data: UrlData) -> str:
         await self.update_settings_callback(Settings.from_json(loads(url_data.data.decode())))
+        return "{}"
+
+    async def toggle_autoconnect(self, url_data: UrlData) -> str:
+        await self.toggle_autoconnect_callback(loads(url_data.data.decode())["value"])
         return "{}"
 
     def get_settings(self, _: UrlData) -> str:

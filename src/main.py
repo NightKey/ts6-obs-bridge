@@ -6,9 +6,11 @@ from typing import Tuple, List, Callable, Any, Deque, Coroutine, Dict
 from os import path
 import atexit
 
+from smdb_db_manager import Version
 from smdb_logger import Logger, LEVEL
 
-from modules import Settings, Status, UserStatus, WebUI, Database, OBSConnector, TeamSpeak6Connector, OBSException
+from modules import Settings, Status, UserStatus, WebUI, Database, OBSConnector, TeamSpeak6Connector, OBSException, \
+    TeamSpeakException
 
 DATA_FOLDER = path.join(path.abspath('.'), "data")
 fp = open(path.join(DATA_FOLDER, "levels"), 'r')
@@ -33,7 +35,8 @@ class Main:
         self.database = loop.run_until_complete(
             Database.create(
                 logger=Logger(log_to_console=True, use_caller_name=True, use_file_names=True, level=LEVEL.from_string(LEVELS["database"])),
-                data_path=DATA_FOLDER
+                data_path=DATA_FOLDER,
+                version=Version(0, 0, 2)
             )
         )
         self.settings = loop.run_until_complete(self.database.get_settings())
@@ -46,7 +49,8 @@ class Main:
             connect_teamspeak_callback=self.connect_to_teamspeak,
             stop_all_callback=self.stop_all,
             ts_user_map_callback=self.get_ts_user_map,
-            obs_scene_map_callback=self.get_obs_scene_map
+            obs_scene_map_callback=self.get_obs_scene_map,
+            toggle_autoconnect_callback=self.toggle_autoconnect
         )
         self.team_speak_6_connector = TeamSpeak6Connector(
             logger=Logger(log_to_console=True, use_caller_name=True, use_file_names=True, level=LEVEL.from_string(LEVELS["teamspeak"])),
@@ -96,12 +100,30 @@ class Main:
     def get_state(self) -> Tuple[bool, bool]:
         return bool(self.status & Status.TeamSpeakReady), bool(self.status & Status.OBSReady)
 
-    def start_web_ui(self):
+    def start(self):
+        self.get_settings()
+        if self.settings.autoconnect:
+            self.logger.info("Auto connecting to Team Speak and OBS")
+            self.loop.run_until_complete(self.autoconnect())
         self.logger.info("Serving webUI at http://127.0.0.1:12345")
         self.web_ui.start()
 
+    async def autoconnect(self) -> None:
+        try:
+            await self.connect_to_teamspeak()
+        except TeamSpeakException as tse:
+            self.logger.error("Team Speak failed to connect", tse)
+        try:
+            await self.connect_to_obs()
+        except OBSException as oe:
+            self.logger.error("OBS failed to connect", oe)
+
     def get_settings(self) -> Settings:
         return self.settings
+
+    async def toggle_autoconnect(self, value: bool) -> None:
+        self.settings.autoconnect = value
+        await self.update_settings(self.settings)
 
     async def update_settings(self, data: Settings) -> None:
         if await self.database.upsert_settings(data):
@@ -146,4 +168,4 @@ if __name__=="__main__":
     main = Main(main_logger, asyncio.new_event_loop())
     main_logger.debug("Registering atexit")
     atexit.register(main.close)
-    main.start_web_ui()
+    main.start()

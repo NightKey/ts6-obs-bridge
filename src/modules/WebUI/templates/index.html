@@ -11,6 +11,15 @@
         <header class="dashboard-header">
             <h1>{{ page_title }}</h1>
             <p class="subtitle">Manage TeamSpeak and OBS Studio connections</p>
+            <div class="form-group">
+                <div class="switch-container">
+                    <label for="autoconnect" style="margin-bottom: 0; cursor: pointer;">Auto-Connect on Startup</label>
+                    <label class="switch">
+                        <input type="checkbox" id="autoconnect">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
         </header>
 
         <form id="configForm" onsubmit="return false;">

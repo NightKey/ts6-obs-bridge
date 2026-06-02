@@ -9,8 +9,15 @@ class Database(DBManager):
     @DBManager.async_timed
     @DBManager.fail_with_exception
     async def migrate_db(self, current: Version, target: Version) -> bool:
-        # No Migration needed for now
-        pass
+        version = current
+        while version != target:
+            if version ==  Version(0, 0, 1):
+                await self.db.execute(
+                    f"""ALTER TABLE settings ADD COLUMN autoconnect INTEGER NOT NULL DEFAULT 0;"""
+                )
+                await self.db.commit()
+                version = Version(0, 0, 2)
+        return True
 
     @DBManager.async_database_safe
     @DBManager.async_during_init
@@ -26,17 +33,19 @@ class Database(DBManager):
                 obs_ip TEXT NOT NULL UNIQUE,
                 obs_port INTEGER NOT NULL,
                 obs_password TEXT NOT NULL,
-                obs_scene TEXT NOT NULL
+                obs_scene TEXT NOT NULL,
+                autoconnect INTEGER NOT NULL
             ) STRICT;
             """
         )
+        await self.db.commit()
 
     @DBManager.async_database_safe
     @DBManager.with_fail_value(None)
     @DBManager.async_timed
     async def get_settings(self) -> Settings | None:
         result = await self.db.execute_fetchall(
-            f"""SELECT teamspeak_ip, teamspeak_port, teamspeak_api, obs_ip, obs_port, obs_password, obs_scene FROM settings"""
+            f"""SELECT teamspeak_ip, teamspeak_port, teamspeak_api, obs_ip, obs_port, obs_password, obs_scene, autoconnect FROM settings"""
         )
         if len(result) == 0: return None
         return Settings(
@@ -46,15 +55,16 @@ class Database(DBManager):
             obs_ip=result[0][3],
             obs_port=result[0][4],
             obs_password=result[0][5],
-            obs_scene=result[0][6]
+            obs_scene=result[0][6],
+            autoconnect=result[0][7]
         )
 
     @DBManager.async_database_safe
     @DBManager.async_timed
     async def upsert_settings(self, settings: Settings) -> bool:
         await self.db.execute(
-            f"""INSERT OR REPLACE INTO settings (teamspeak_ip, teamspeak_port, teamspeak_api, obs_ip, obs_port, obs_password, obs_scene)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            f"""INSERT OR REPLACE INTO settings (teamspeak_ip, teamspeak_port, teamspeak_api, obs_ip, obs_port, obs_password, obs_scene, autoconnect)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 settings.teamspeak_ip,
@@ -63,7 +73,8 @@ class Database(DBManager):
                 settings.obs_ip,
                 settings.obs_port,
                 settings.obs_password,
-                settings.obs_scene
+                settings.obs_scene,
+                settings.autoconnect
             )
         )
         await self.db.commit()

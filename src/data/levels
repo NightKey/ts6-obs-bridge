@@ -1,7 +1,7 @@
 {
     "database":"INFO",
     "webui":"WARNING",
-    "teamspeak":"INFO",
+    "teamspeak":"DEBUG",
     "obs":"INFO",
     "main":"INFO"
 }

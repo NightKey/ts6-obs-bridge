@@ -11,6 +11,7 @@ class Settings:
     obs_port: int
     obs_password: str
     obs_scene: str
+    autoconnect: bool
 
     @staticmethod
     def from_json(json: Dict[str, Any]) -> 'Settings':
@@ -21,7 +22,8 @@ class Settings:
             obs_ip = json["obs_ip"],
             obs_port = json["obs_port"],
             obs_password = json["obs_password"],
-            obs_scene = json["obs_scene"]
+            obs_scene = json["obs_scene"],
+            autoconnect= bool(json.get("autoconnect", 0))
         )
 
     def to_json(self) -> Dict[str, Any]:
@@ -32,7 +34,8 @@ class Settings:
             "obs_ip" : self.obs_ip,
             "obs_port" : self.obs_port,
             "obs_password" : self.obs_password,
-            "obs_scene" : self.obs_scene
+            "obs_scene" : self.obs_scene,
+            "autoconnect" : self.autoconnect
         }
 
     def which_changed(self, other: 'Settings') -> Tuple[bool, bool]:

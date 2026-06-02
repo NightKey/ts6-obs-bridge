@@ -50,7 +50,6 @@ async function loadSettings() {
     const data = await apiFetch('get_settings');
     if (!data) return;
 
-    // Direct mapping of key-values to input fields by exact ID match
     const fields = [
         'teamspeak_ip', 'teamspeak_port', 'teamspeak_api',
         'obs_ip', 'obs_port', 'obs_password', 'obs_scene'
@@ -62,6 +61,12 @@ async function loadSettings() {
             input.value = data[fieldId];
         }
     });
+
+    // Load in the auto-connect value at the start
+    const autoconnectInput = document.getElementById('autoconnect');
+    if (autoconnectInput && data.autoconnect !== undefined) {
+        autoconnectInput.checked = !!data.autoconnect;
+    }
 }
 
 // 2. Save Button Event: package inputs into JSON and POST to update_settings
@@ -185,5 +190,14 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btnStop')?.addEventListener('click', stopAllConnections);
     document.getElementById('btnCloseError')?.addEventListener('click', () => {
         document.getElementById('errorPopup').classList.remove('show');
+    });
+    document.getElementById('autoconnect')?.addEventListener('change', async (e) => {
+        await apiFetch('toggle_autoconnect', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ "value": e.target.checked })
+        });
     });
 });
