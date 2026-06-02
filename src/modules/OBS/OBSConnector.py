@@ -4,7 +4,7 @@ import hashlib
 from typing import Callable, Tuple, Dict
 
 from smdb_logger import Logger
-from websockets import connect, ClientConnection, ConnectionClosedOK, ConnectionClosedError
+from websockets import connect, ClientConnection, ConnectionClosedOK, ConnectionClosedError, State
 from json import loads, dumps
 from time import time
 import random
@@ -17,7 +17,8 @@ from .. import Status, UserStatus
 class OBSConnector:
     logger: Logger
     scene: str
-    user_scenes: Dict[str, Tuple[SceneItem, bool]] = {}
+    user_scenes: Dict[str, SceneItem] = {}
+    requested_states: Dict[str, UserStatus] = {}
     stopping: Event = Event()
     message_queue: Queue = Queue()
     websocket: ClientConnection | None = None
@@ -29,7 +30,7 @@ class OBSConnector:
 
     @property
     def is_connected(self) -> bool:
-        return self.websocket is not None
+        return self.websocket is not None and self.websocket.state == State.OPEN
 
     def __init__(self, logger: Logger, connection_failed_callback: Callable[[Status], None]):
         self.logger = logger
@@ -140,12 +141,14 @@ class OBSConnector:
         for scene in response['d']["responseData"]['scenes']:
             name = scene["sceneName"]
             if "ts6-obs-" in name:
-                item = SceneItem(itemName=name, itemId=scene["sceneIndex"])
-                self.user_scenes[name.split('ts6-obs-')[-1]] = (item, False)
-                await self.set_all_to_known_off(item)
+                scene_user = name.split('ts6-obs-')[-1]
+                item = SceneItem(itemName=name, itemId=scene["sceneIndex"], enabled=scene_user in self.requested_states)
+                self.user_scenes[scene_user] = item
+                await self.set_all_to_known(item, scene_user)
+                if scene_user in self.requested_states: del self.requested_states[scene_user]
 
-    async def set_all_to_known_off(self, scene: SceneItem) -> None:
-        self.logger.debug(f"Setting {scene} to a known, all off state")
+    async def set_all_to_known(self, scene: SceneItem, scene_user: str) -> None:
+        self.logger.debug(f"Setting {scene} to a known, all off state if no request was for that name")
         request = Request(
             requestType=RequestType.GetSceneItemList,
             requestId=self.request_id,
@@ -158,18 +161,12 @@ class OBSConnector:
             return
         requests = []
         for item in response['d']["responseData"]["sceneItems"]:
-            requests.append(
-                Request(
-                    RequestType.SetSceneItemEnabled,
-                    self.request_id,
-                    requestData={
-                        "sceneName": scene.itemName,
-                        "sceneItemId": item["sceneItemId"],
-                        "sceneItemEnabled": False
-                    }
-                ).to_request_dict()
-            )
-            scene.add_sub_item(SceneItem(itemName=item["sourceName"], itemId=item["sceneItemId"]))
+            subitem_name = item["sourceName"]
+            sub_item = SceneItem(itemName=subitem_name, itemId=item["sceneItemId"], enabled=scene_user in self.requested_states and subitem_name == self.requested_states[scene_user].value)
+            requests.append(sub_item.get_request(scene.itemName,self.request_id).to_request_dict())
+            scene.add_sub_item(sub_item)
+
+        if len(request) == 0: return
         batch_request = {
             "requestId": self.request_id,
             "executionType": 2,
@@ -178,79 +175,34 @@ class OBSConnector:
         await self.send(batch_request, OpCode.RequestBatch)
         await self.get_message(OpCode.RequestBatchResponse)
 
-    async def set_scene_to(self, scene: SceneItem, target_state: UserStatus) -> None:
-        requests = []
-        self.logger.debug(f"Setting all sub-items in {scene} to {target_state}.")
-        for item in scene.sub_items:
-            item.enabled = item.itemName == target_state.value
-            requests.append(
-                Request(
-                    RequestType.SetSceneItemEnabled,
-                    self.request_id,
-                    requestData={
-                        "sceneName": scene.itemName,
-                        "sceneItemId": item.itemId,
-                        "sceneItemEnabled": item.itemName == target_state.value
-                    }
-                ).to_request_dict()
-            )
-
-        batch_request = {
-            "requestId": self.request_id,
-            "executionType": 2,
-            "requests": requests
-        }
-        await self.send(batch_request, OpCode.RequestBatch)
-        await self.get_message(OpCode.RequestBatchResponse)
-
-    async def change_state(self, user: str, from_state: UserStatus | None, target_state: UserStatus) -> None:
-        self.logger.info(f"Changing {user} state from {from_state} to {target_state}")
-        if user not in self.user_scenes:
+    async def set_user_to(self, name: str, target_state: UserStatus, only_present: bool = False) -> None:
+        if not self.is_connected:
+            self.requested_states[name] = target_state
             return
-        (scene, present) = self.user_scenes[user]
-        self.user_scenes[user] = (scene, target_state.name != UserStatus.Left.name)
         requests = []
-        if from_state is not None and from_state.name != UserStatus.Left.name:
-            from_state_item_id = [x for x in scene.sub_items if x.itemName == from_state.value][0].itemId
-            requests.append(
-                Request(
-                    requestType=RequestType.SetSceneItemEnabled,
-                    requestId=self.request_id,
-                    requestData={
-                        "sceneName": scene.itemName,
-                        "sceneItemId": from_state_item_id,
-                        "sceneItemEnabled": False
-                    }
-                ).to_request_dict()
-            )
-        if target_state.name != UserStatus.Left.name:
-            target_state_item_id = [x for x in scene.sub_items if x.itemName == target_state.value][0].itemId
-            requests.append(
-                Request(
-                    requestType=RequestType.SetSceneItemEnabled,
-                    requestId=self.request_id,
-                    requestData={
-                        "sceneName": scene.itemName,
-                        "sceneItemId": target_state_item_id,
-                        "sceneItemEnabled": True
-                    }
-                ).to_request_dict()
-            )
-        if not requests: return
+        self.logger.debug(f"Setting {name} user's scene to {target_state.name}")
+        scene = self.user_scenes.get(name, None)
+        if scene is None or (not scene.enabled and only_present): return
+        scene.enabled = target_state.value != UserStatus.Left.value
+        for item in scene.sub_items:
+            new_state = item.itemName == target_state.value
+            if item.enabled and new_state: return # Same state True, already set to that.
+            if not item.enabled and not new_state: continue # Same false, no need to send all 3 request, when someone leaves.
+            item.enabled =  new_state
+            requests.append(item.get_request(scene.itemName, self.request_id).to_request_dict())
+
         batch_request = {
             "requestId": self.request_id,
             "executionType": 2,
             "requests": requests
         }
         await self.send(batch_request, OpCode.RequestBatch)
-        response = await self.get_message(OpCode.RequestBatchResponse)
-        self.logger.debug(f"{response}")
+        await self.get_message(OpCode.RequestBatchResponse)
 
     async def toggle_deafen(self, is_deafened: bool):
         self.logger.debug(f"Toggling deafen to {is_deafened}")
-        for _, (scene, present) in self.user_scenes.items():
-            if present:
-                await self.set_scene_to(scene, UserStatus.Muted if is_deafened else UserStatus.Quiet)
+        for name in self.user_scenes.keys():
+            await self.set_user_to(name, UserStatus.Muted if is_deafened else UserStatus.Quiet, only_present=True)
 
     def get_scene_map(self) -> dict:
-        return {"message_queue":self.message_queue.qsize(), "scenes":[{"name": name, "present": present, "all": [x.itemName for x in scene.sub_items]} for name, (scene, present) in self.user_scenes.items()]}
+        return {"message_queue":self.message_queue.qsize(), "scenes":[{"name": name, "present": scene.enabled, "all": [{"name":x.itemName, "enabled":x.enabled} for x in scene.sub_items]} for name, scene in self.user_scenes.items()]}

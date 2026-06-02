@@ -12,7 +12,7 @@ from .. import Status, UserStatus
 class TeamSpeak6Connector:
     logger: Logger
     connection_failed_callback: Callable[[Status], None]
-    user_status_changed_callback: Callable[[str, UserStatus | None, UserStatus], Coroutine[Any, Any, None]]
+    user_status_changed_callback: Callable[[str, UserStatus], Coroutine[Any, Any, None]]
     user_deafened_changed_callback: Callable[[bool], Coroutine[Any, Any, None]]
     user: ClientInfo
     websocket: ClientConnection | None = None
@@ -27,7 +27,7 @@ class TeamSpeak6Connector:
             self,
             logger: Logger,
             connection_failed_callback: Callable[[Status], None],
-            user_status_changed_callback: Callable[[str, UserStatus | None, UserStatus], Coroutine[Any, Any, None]],
+            user_status_changed_callback: Callable[[str, UserStatus], Coroutine[Any, Any, None]],
             user_deafened_changed_callback: Callable[[bool], Coroutine[Any, Any, None]]
     ):
         self.logger = logger
@@ -91,7 +91,7 @@ class TeamSpeak6Connector:
         self.logger.trace(f"Response: {response}")
         self.websocket = websocket
         if len(response["payload"]["connections"]) == 0:
-            raise TeamSpeakException(f"Please connect to a server")
+            raise TeamSpeakException(f"Could not determine user. Please connect to a server.")
         await self.load_clients_present(response["payload"]["connections"][0]["clientId"],  response["payload"]["connections"][0]["clientInfos"])
         self.logger.debug(f"User id: {self.user.id}")
 
@@ -108,7 +108,7 @@ class TeamSpeak6Connector:
                 self.user = client_info
                 continue
             self.user_status_map[client_info.id] = client_info
-            await self.user_state_changed(client_info.name, None, self.evaluate_client_info(client_info))
+            await self.user_state_changed(client_info.name, self.evaluate_client_info(client_info))
 
     async def close(self) -> None:
         if self.websocket is None: return
@@ -125,91 +125,13 @@ class TeamSpeak6Connector:
                     message = loads(await self.websocket.recv())
                     self.logger.trace(f"New message with type: {message['type']}")
                     if message["type"] == "clientPropertiesUpdated":
-                        self.logger.debug("Processing clientPropertiesUpdated message")
-                        client_id = message["payload"]["clientId"]
-                        new_client_info = ClientInfo.from_dict(message["payload"], client_id)
-                        if client_id == self.user.id:
-                            await self.user_deafened_changed(new_client_info.is_deafened)
-                            continue
-                        client_info = self.user_status_map.get(new_client_info.id, None)
-                        current_status = self.evaluate_client_info(client_info)
-                        if client_info is None:
-                            client_info = new_client_info
-                        else:
-                            client_info = client_info.merge(new_client_info)
-                        self.user_status_map[new_client_info.id] = client_info
-                        new_status = self.evaluate_client_info(client_info)
-                        self.logger.trace(f"clientPropertiesUpdated: Calling user_state_changed for user {client_info.name} old status {current_status} mew status {new_status}")
-                        await self.user_state_changed(client_info.name, current_status, new_status)
-                        self.user_status_map[client_info.id] = client_info
+                        await self.client_property_updated(message["payload"])
                     elif message["type"] == "talkStatusChanged":
-                        self.logger.debug("Processing talkStatusChanged message")
-                        talker_id = message["payload"]["clientId"]
-                        if talker_id == self.user.id:
-                            self.logger.debug("Talker was user")
-                            continue
-                        old_info = self.user_status_map[talker_id]
-                        if old_info == UserStatus.Left:
-                            self.logger.debug(f"Ignoring state change for {old_info.name} from Left")
-                            continue
-                        current_status = self.evaluate_client_info(old_info)
-                        if current_status.name == UserStatus.Left.name: continue
-                        new_status = UserStatus.Speaking if message["payload"]["status"] == 1 else UserStatus.Quiet
-                        if current_status.name == UserStatus.Muted.name and new_status.name == UserStatus.Quiet.name: continue
-                        self.logger.trace(f"talkStatusChanged: Calling user_state_changed for user {old_info.name} old status {current_status} mew status {new_status}")
-                        await self.user_state_changed(old_info.name, current_status, new_status)
-                        old_info.is_talking = message["payload"]["status"] == 1
-                        if old_info.is_talking:
-                            old_info.is_muted_by_user = False
-                            old_info.is_muted = False
-                        self.user_status_map[old_info.id] = old_info
+                        await self.talking_status_changed(message["payload"])
                     elif message["type"] == "clientChannelGroupChanged":
-                        new_channel_id = message["payload"]["channelId"]
-                        client_id = message["payload"]["clientId"]
-                        if client_id != self.user.id: continue
-                        for client_id, client_status in self.user_status_map.items():
-                            self.logger.trace(f"clientChannelGroupChanged: Calling user_state_changed for user {client_status.name} old status {self.evaluate_client_info(client_status)} mew status {UserStatus.Left if client_status.channel_id != new_channel_id else UserStatus.Quiet}")
-                            await self.user_state_changed(
-                                client_status.name,
-                                self.evaluate_client_info(client_status),
-                                self.evaluate_client_info(client_status, new_channel_id)
-                            )
-                        self.user.channel_id = new_channel_id
+                        await self.client_channel_group_changed(message["payload"])
                     elif message["type"] == "clientMoved":
-                        client_id = message["payload"]["clientId"]
-                        new_channel_id = message["payload"]["newChannelId"]
-                        if client_id == self.user.id:
-                            for client_id, client_status in self.user_status_map.items():
-                                self.logger.trace(f"clientMoved: Calling user_state_changed for user {client_status.name} old status {self.evaluate_client_info(client_status)} mew status {UserStatus.Left if client_status.channel_id != new_channel_id else UserStatus.Quiet}")
-                                await self.user_state_changed(
-                                    client_status.name,
-                                    self.evaluate_client_info(client_status),
-                                    self.evaluate_client_info(client_status, new_channel_id)
-                                )
-                            self.user.channel_id = new_channel_id
-                        else:
-                            client_info = self.user_status_map.get(client_id, None)
-                            if client_info is None:
-                                self.user_status_map[client_id] = ClientInfo(
-                                    id=client_id,
-                                    name=None,
-                                    is_talking=None,
-                                    is_muted =None,
-                                    is_deafened =None,
-                                    is_muted_by_user =None,
-                                    channel_id=new_channel_id,
-                                )
-                                continue
-                            self.logger.trace(f"clientMoved: Calling user_state_changed for user {client_info.name} old status {self.evaluate_client_info(client_info)} mew status {UserStatus.Left if client_info.channel_id != new_channel_id else UserStatus.Quiet}")
-                            self.user_status_map[client_info.id] = client_info.with_new_channel(new_channel_id)
-                            if new_channel_id == 0:
-                                del self.user_status_map[client_info.id]
-                            await self.user_state_changed(
-                                client_info.name,
-                                self.evaluate_client_info(client_info),
-                                self.evaluate_client_info(client_info.with_new_channel(new_channel_id))
-                            )
-
+                        await self.client_moved(message["payload"])
             except TimeoutError:
                 pass
             except ConnectionClosedOK:
@@ -223,10 +145,99 @@ class TeamSpeak6Connector:
             except Exception as ex:
                 self.logger.error("Error during retrieving message", ex)
 
-    async def user_state_changed(self, user_name: str | None, old_status: UserStatus | None, new_status: UserStatus) -> None:
-        if user_name is None or (old_status and old_status.name == new_status.name): return
+
+    async def client_property_updated(self, message: dict) -> None:
+        self.logger.debug("Processing clientPropertiesUpdated message")
+        client_id = message["clientId"]
+        new_client_info = ClientInfo.from_dict(message, client_id)
+        if client_id == self.user.id:
+            await self.user_deafened_changed(new_client_info.is_deafened)
+            return
+        client_info = self.user_status_map.get(new_client_info.id, None)
+        if client_info is None:
+            client_info = new_client_info
+        else:
+            client_info = client_info.merge(new_client_info)
+        self.user_status_map[new_client_info.id] = client_info
+        new_status = self.evaluate_client_info(client_info)
+        self.logger.trace(
+            f"clientPropertiesUpdated: Calling user_state_changed for user {client_info.name} mew status {new_status}")
+        await self.user_state_changed(client_info.name, new_status)
+        self.user_status_map[client_info.id] = client_info
+
+    async def talking_status_changed(self, message: dict) -> None:
+        self.logger.debug("Processing talkStatusChanged message")
+        talker_id = message["clientId"]
+        is_talking = message["status"] == 1
+        if talker_id == self.user.id:
+            self.logger.debug("Talker was user")
+            return
+        old_info = self.user_status_map[talker_id]
+        if old_info == UserStatus.Left:
+            self.logger.debug(f"Ignoring state change for {old_info.name} from Left")
+            return
+        current_status = self.evaluate_client_info(old_info)
+        if current_status.name == UserStatus.Left.name: return
+        new_status = UserStatus.Speaking if is_talking else UserStatus.Quiet
+        if current_status.name == UserStatus.Muted.name and new_status.name == UserStatus.Quiet.name: return
+        self.logger.trace(f"talkStatusChanged: Calling user_state_changed for user {old_info.name} old status {current_status} mew status {new_status}")
+        await self.user_state_changed(old_info.name, new_status)
+        old_info.is_talking = is_talking
+        if old_info.is_talking:
+            old_info.is_muted_by_user = False
+            old_info.is_muted = False
+        self.user_status_map[old_info.id] = old_info
+
+    async def client_channel_group_changed(self, message: dict) -> None:
+        new_channel_id = message["channelId"]
+        client_id = message["clientId"]
+        if client_id != self.user.id: return
+        for client_id, client_status in self.user_status_map.items():
+            self.logger.trace(
+                f"clientChannelGroupChanged: Calling user_state_changed for user {client_status.name} old status {self.evaluate_client_info(client_status)} mew status {UserStatus.Left if client_status.channel_id != new_channel_id else UserStatus.Quiet}")
+            await self.user_state_changed(
+                client_status.name,
+                self.evaluate_client_info(client_status, new_channel_id)
+            )
+        self.user.channel_id = new_channel_id
+
+    async def client_moved(self, message: dict) -> None:
+        client_id = message["clientId"]
+        new_channel_id = message["newChannelId"]
+        if client_id == self.user.id:
+            for client_id, client_status in self.user_status_map.items():
+                self.logger.trace(
+                    f"clientMoved: Calling user_state_changed for user {client_status.name} old status {self.evaluate_client_info(client_status)} mew status {UserStatus.Left if client_status.channel_id != new_channel_id else UserStatus.Quiet}")
+                await self.user_state_changed(
+                    client_status.name,
+                    self.evaluate_client_info(client_status, new_channel_id)
+                )
+            self.user.channel_id = new_channel_id
+        else:
+            client_info = self.user_status_map.get(client_id, None)
+            if client_info is None:
+                self.user_status_map[client_id] = ClientInfo(
+                    id=client_id,
+                    name=None,
+                    is_talking=None,
+                    is_muted=None,
+                    is_deafened=None,
+                    is_muted_by_user=None,
+                    channel_id=new_channel_id,
+                )
+                return
+            self.logger.trace(f"clientMoved: Calling user_state_changed for user {client_info.name} old status {self.evaluate_client_info(client_info)} mew status {UserStatus.Left if client_info.channel_id != new_channel_id else UserStatus.Quiet}")
+            client_info = client_info.with_new_channel(new_channel_id)
+            if new_channel_id == 0:
+                del self.user_status_map[client_info.id]
+            await self.user_state_changed(
+                client_info.name,
+                self.evaluate_client_info(client_info)
+            )
+
+    async def user_state_changed(self, user_name: str | None, new_status: UserStatus) -> None:
         self.logger.debug(f"User {user_name} status {new_status}")
-        if not self.user.is_deafened: await self.user_status_changed_callback(user_name, old_status, new_status)
+        if not self.user.is_deafened: await self.user_status_changed_callback(user_name, new_status)
 
     async def user_deafened_changed(self, status: bool) -> None:
         await self.user_deafened_changed_callback(status)

@@ -59,8 +59,13 @@ function renderScenes(scenes) {
         // Loop down and render internal scene elements securely
         const sourcesHTML = (scene.all && scene.all.length > 0)
             ? `<div class="scene-sources">
-                ${scene.all.map(source => `<span class="source-tag">${escapeHTML(source)}</span>`).join('')}
-               </div>`
+                    ${scene.all.map(source => {
+                        const sourceStyle = source.enabled
+                            ? ''
+                            : 'style="opacity: 0.4; border-style: dashed;"';
+                        return `<span class="source-tag" ${sourceStyle}>${escapeHTML(source.name)}</span>`;
+                    }).join('')}
+                </div>`
             : '<div class="scene-sources"><span class="source-tag" style="font-style: italic;">No sources</span></div>';
 
         return `

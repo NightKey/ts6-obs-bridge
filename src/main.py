@@ -117,14 +117,12 @@ class Main:
                 await self.team_speak_6_connector.close()
                 await self.connect_to_teamspeak()
 
-    async def user_state_changed(self, user: str, from_state: UserStatus, target_state: UserStatus) -> None:
+    async def user_state_changed(self, user: str, target_state: UserStatus) -> None:
         self.logger.debug(f"Change state requested for {user}")
-        if not self.obs_connector.is_connected: return
-        await self.obs_connector.change_state(user, from_state, target_state)
+        await self.obs_connector.set_user_to(user, target_state)
 
     async def deafen_toggled(self, is_deafened: bool) -> None:
         self.logger.debug("Deafen toggled")
-        if not self.obs_connector.is_connected: return
         await self.obs_connector.toggle_deafen(is_deafened)
 
     async def stop_all(self) -> None:
