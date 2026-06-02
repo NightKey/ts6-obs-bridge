@@ -19,7 +19,7 @@ class WebUI:
     connect_obs_callback: Callable[[], Coroutine[Any, Any, bool]]
     connect_teamspeak_callback: Callable[[], Coroutine[Any, Any, bool]]
     stop_all_callback: Callable[[], Coroutine[Any, Any, None]]
-    ts_user_map_callback: Callable[[], List[dict]]
+    ts_user_map_callback: Callable[[], dict]
     obs_scene_map_callback: Callable[[], dict]
 
 
@@ -32,7 +32,7 @@ class WebUI:
             connect_obs_callback: Callable[[], Coroutine[Any, Any, bool]],
             connect_teamspeak_callback: Callable[[], Coroutine[Any, Any, bool]],
             stop_all_callback: Callable[[], Coroutine[Any, Any, None]],
-            ts_user_map_callback: Callable[[], List[dict]],
+            ts_user_map_callback: Callable[[], dict],
             obs_scene_map_callback: Callable[[], dict],
             toggle_autoconnect_callback: Callable[[bool], Coroutine[Any, Any, None]]
     ):

@@ -156,7 +156,7 @@ class Main:
         self.loop.run_until_complete(self.database.close())
         self.web_ui.close()
 
-    def get_ts_user_map(self) -> List[dict]:
+    def get_ts_user_map(self) -> dict:
         return self.team_speak_6_connector.get_user_map()
 
     def get_obs_scene_map(self) -> dict:

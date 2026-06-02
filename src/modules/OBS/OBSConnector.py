@@ -205,4 +205,4 @@ class OBSConnector:
             await self.set_user_to(name, UserStatus.Muted if is_deafened else UserStatus.Quiet, only_present=True)
 
     def get_scene_map(self) -> dict:
-        return {"message_queue":self.message_queue.qsize(), "scenes":[{"name": name, "present": scene.enabled, "all": [{"name":x.itemName, "enabled":x.enabled} for x in scene.sub_items]} for name, scene in self.user_scenes.items()]}
+        return {"connected": self.is_connected, "message_queue":self.message_queue.qsize(), "scenes":[{"name": name, "present": scene.enabled, "all": [{"name":x.itemName, "enabled":x.enabled} for x in scene.sub_items]} for name, scene in self.user_scenes.items()]}

@@ -7,15 +7,26 @@ async function fetchUserMap() {
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        const users = await response.json();
-        renderUsers(users);
+        const result = await response.json();
+        setSyncIndicator(result.connected);
+        renderUsers(result.users);
     } catch (error) {
         console.error("Failed to fetch TeamSpeak data:", error);
+        const syncIndicator = document.getElementById('live-indicator');
+        syncIndicator.classList.remove("connected", "disconnected")
+        syncIndicator.classList.add("failed")
         document.getElementById('userList').innerHTML = `
             <div class="empty-state" style="color: var(--color-muted);">
                 Failed to load users. Retrying...
             </div>`;
     }
+}
+
+function setSyncIndicator(connected) {
+    const syncIndicator = document.getElementById('live-indicator');
+    syncIndicator.classList.remove("connected", "disconnected", "failed");
+    syncIndicator.classList.remove("connected");
+    syncIndicator.classList.add(connected ? "connected" : "disconnected");
 }
 
 function renderUsers(users) {

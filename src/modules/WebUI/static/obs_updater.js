@@ -12,9 +12,13 @@ async function fetchObsData() {
         const data = await response.json();
 
         updateMessageQueue(data.message_queue);
+        setSyncIndicator(data.connected);
         renderScenes(data.scenes);
     } catch (error) {
         console.error("Failed to fetch OBS data:", error);
+        const syncIndicator = document.getElementById('live-indicator');
+        syncIndicator.classList.remove("connected", "disconnected")
+        syncIndicator.classList.add("failed")
         document.getElementById('sceneList').innerHTML = `
             <div class="empty-state" style="color: var(--status-red);">
                 Failed to load OBS scenes. Retrying...
@@ -38,6 +42,13 @@ function updateMessageQueue(count) {
         queueElement.classList.remove('queue-warning');
         queueElement.classList.add('queue-normal');
     }
+}
+
+function setSyncIndicator(connected) {
+    const syncIndicator = document.getElementById('live-indicator');
+    syncIndicator.classList.remove("connected", "disconnected", "failed");
+    syncIndicator.classList.remove("connected");
+    syncIndicator.classList.add(connected ? "connected" : "disconnected");
 }
 
 function renderScenes(scenes) {

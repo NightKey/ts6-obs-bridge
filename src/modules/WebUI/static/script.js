@@ -24,8 +24,10 @@ function updateStatusMarker(elementId, isConnected) {
 
     const textSpan = marker.querySelector('.status-text');
 
+    // Clean out all temporary states
+    marker.classList.remove('status-disconnected', 'status-connected', 'status-connecting');
+
     if (isConnected) {
-        marker.classList.remove('status-disconnected');
         marker.classList.add('status-connected');
         if (textSpan) textSpan.textContent = 'Connected';
         if (elementId === "ts_status") {
@@ -34,7 +36,6 @@ function updateStatusMarker(elementId, isConnected) {
             document.getElementById('btnConnectOBS').disabled = true;
         }
     } else {
-        marker.classList.remove('status-connected');
         marker.classList.add('status-disconnected');
         if (textSpan) textSpan.textContent = 'Disconnected';
         if (elementId === "ts_status") {
@@ -121,27 +122,62 @@ async function checkConnectionState() {
     }
 }
 
-// 4. Action button handlers for triggering connection flows
-async function connectToTeamspeak() {
-    if (document.getElementById("teamspeak_api").value == "") {
-        showError("Please authorize the application in TeamSpeak 6", "Warning", true)
-    }
-    const response = await apiFetch('connect_teamspeak');
-    if (response && response.hasOwnProperty('connected')) {
-        updateStatusMarker('ts_status', response.connected);
+function setMarkerToConnecting(elementId) {
+    const marker = document.getElementById(elementId);
+    if (!marker) return;
+
+    const textSpan = marker.querySelector('.status-text');
+    marker.classList.remove('status-disconnected', 'status-connected');
+    marker.classList.add('status-connecting');
+    if (textSpan) textSpan.textContent = 'Connecting...';
+
+    if (elementId === "ts_status") {
+        document.getElementById('btnConnectTS').disabled = true;
+    } else {
+        document.getElementById('btnConnectOBS').disabled = true;
     }
 }
 
-async function connectToOBS() {
-    const response = await apiFetch('connect_obs');
-    if (response && response.hasOwnProperty('connected')) {
-        updateStatusMarker('obs_status', response.connected);
+// 4. Action button handlers for triggering connection flows
+async function connectToTeamspeak() {
+    if (document.getElementById("teamspeak_api").value == "") {
+        showError("Please authorize the application in TeamSpeak 6", "Warning", true);
     }
+
+    const btn = document.getElementById('btnConnectTS');
+    if (btn) btn.disabled = true;
+    setMarkerToConnecting('ts_status');
+
+    await apiFetch('connect_teamspeak');
+
+    if (btn) btn.disabled = false;
+    await checkConnectionState();
+}
+
+async function connectToOBS() {
+    const btn = document.getElementById('btnConnectOBS');
+    if (btn) btn.disabled = true;
+    setMarkerToConnecting('obs_status');
+
+    await apiFetch('connect_obs');
+
+    if (btn) btn.disabled = false;
+    await checkConnectionState();
 }
 
 // Optional helper for the Stop All action
 async function stopAllConnections() {
-    const response = await apiFetch("stop_all");
+    const btn = document.getElementById('btnStop');
+    if (btn) btn.disabled = true;
+
+    // Set both to connecting/waiting visual patterns while closing
+    setMarkerToConnecting('ts_status');
+    setMarkerToConnecting('obs_status');
+
+    await apiFetch("stop_all");
+
+    if (btn) btn.disabled = false;
+    await checkConnectionState();
 }
 
 function showError(message, title, temporary=false) {

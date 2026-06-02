@@ -242,5 +242,5 @@ class TeamSpeak6Connector:
     async def user_deafened_changed(self, status: bool) -> None:
         await self.user_deafened_changed_callback(status)
 
-    def get_user_map(self) -> List[dict]:
-        return [{"id":x.id, "name":x.name, "status":self.evaluate_client_info(x).value} for x in self.user_status_map.values()]
+    def get_user_map(self) -> dict:
+        return {"connected": self.is_connected, "users": [{"id":x.id, "name":x.name, "status":self.evaluate_client_info(x).value} for x in self.user_status_map.values()]}

@@ -14,6 +14,7 @@
     /* Strict Functional Status Markers */
     --status-green: #2ecc71;
     --status-red: #e74c3c;
+    --status-yellow: #f1c40f;
 
     /* Theme Layout Mappings */
     --bg-app: var(--color-main-dark);
@@ -181,6 +182,9 @@ label {
 
 .status-connected { color: var(--status-green); }
 .status-connected .status-dot { background-color: var(--status-green); }
+
+.status-connecting { color: var(--status-yellow); }
+.status-connecting .status-dot { background-color: var(--status-yellow); }
 
 .status-disconnected { color: var(--color-special-light); }
 .status-disconnected .status-dot { background-color: var(--status-red); }
@@ -423,7 +427,7 @@ input:checked + .slider:before {
     color: var(--text-primary);
 }
 
-.voice-widget-theme .live-indicator {
+.voice-widget-theme #live-indicator {
     display: flex;
     align-items: center;
     font-size: 0.7rem;
@@ -436,15 +440,26 @@ input:checked + .slider:before {
     border-radius: 6px;
 }
 
-.voice-widget-theme .live-indicator::before {
+.voice-widget-theme #live-indicator::before {
     content: '';
     display: inline-block;
     width: 6px;
     height: 6px;
-    background-color: var(--status-green);
     border-radius: 50%;
     margin-right: 6px;
     animation: modern-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.voice-widget-theme #live-indicator.connected::before {
+    background-color: var(--status-green);
+}
+
+.voice-widget-theme #live-indicator.disconnected::before {
+    background-color: var(--status-yellow);
+}
+
+.voice-widget-theme #live-indicator.failed::before {
+    background-color: var(--status-red);
 }
 
 .voice-widget-theme .user-list {
