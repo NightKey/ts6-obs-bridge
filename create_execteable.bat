@@ -1,6 +1,5 @@
 @ECHO off
-SET main_dir=%~dp0
-cd %main_dir%
+git pull
 
 IF NOT EXIST venv\ (
     ECHO Venv doesn't exist, creating venv.

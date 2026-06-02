@@ -1,3 +1,4 @@
+git pull
 if ! [ -d venv ]
 then
   echo "venv doesn't exist, creating venv."
