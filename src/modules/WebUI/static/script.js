@@ -84,7 +84,8 @@ async function saveSettings() {
         obs_ip: document.getElementById('obs_ip').value || document.getElementById('obs_ip').placeholder,
         obs_port: parseInt(document.getElementById('obs_port').value || document.getElementById('obs_port').placeholder, 10),
         obs_password: document.getElementById('obs_password').value,
-        obs_scene: document.getElementById('obs_scene').value
+        obs_scene: document.getElementById('obs_scene').value,
+        autoconnect: document.getElementById('autoconnect').checked
     };
 
     const response = await apiFetch('update_settings', {

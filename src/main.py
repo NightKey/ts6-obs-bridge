@@ -98,10 +98,10 @@ class Main:
         self.status &= failed_mask
 
     def get_state(self) -> Tuple[bool, bool]:
-        return bool(self.status & Status.TeamSpeakReady), bool(self.status & Status.OBSReady)
+        return bool(self.team_speak_6_connector.is_connected), bool(self.obs_connector.is_connected)
 
     def start(self):
-        self.get_settings()
+        self.logger.trace(f"Current settings: {self.settings}")
         if self.settings.autoconnect:
             self.logger.info("Auto connecting to Team Speak and OBS")
             self.loop.run_until_complete(self.autoconnect())
