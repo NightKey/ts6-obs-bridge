@@ -67,6 +67,7 @@ async function loadSettings() {
     const autoconnectInput = document.getElementById('autoconnect');
     if (autoconnectInput && data.autoconnect !== undefined) {
         autoconnectInput.checked = !!data.autoconnect;
+        toggleConnectButtons(!!data.autoconnect);
     }
 }
 
@@ -107,30 +108,83 @@ async function saveSettings() {
 }
 
 // 3. Periodic update: check state of connections every 3 seconds
+var delay_count = 0;
+var last_teamspeak_status = false;
+var last_obs_status = false;
 async function checkConnectionState() {
     const state = await apiFetch('get_state');
     if (!state) return;
 
     // Checks key cases exactly matching your specs: "teamspeak_connected" and "OBS_connected"
     if (state.hasOwnProperty('teamspeak_connected')) {
-        updateStatusMarker('ts_status', state.teamspeak_connected);
-        if (state.teamspeak_connected && document.getElementById("teamspeak_api").value == "") {
-            await loadSettings();
+        if (delay_count === 0 || last_teamspeak_status != state.teamspeak_connected) {
+            last_teamspeak_status = state.teamspeak_connected;
+            updateStatusMarker('ts_status', state.teamspeak_connected);
+            if (state.teamspeak_connected && document.getElementById("teamspeak_api").value == "") {
+                await loadSettings();
+            }
         }
     }
     if (state.hasOwnProperty('OBS_connected')) {
-        updateStatusMarker('obs_status', state.OBS_connected);
+        if (delay_count === 0 || last_obs_status != state.OBS_connected) {
+            last_obs_status = state.OBS_connected;
+            updateStatusMarker('obs_status', state.OBS_connected);
+        }
+    }
+    if (delay_count > 0) {
+        delay_count --;
     }
 }
 
-function setMarkerToConnecting(elementId) {
+async function toggleAutoConnect() {
+    const toggle = document.getElementById('autoconnect');
+
+    if (!toggle) return;
+
+    await apiFetch('toggle_autoconnect', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ "value": toggle.checked })
+    });
+
+    toggleConnectButtons(toggle.checked);
+    if (toggle.checked) {
+        setMarkerToConnecting('ts_status');
+        setMarkerToConnecting('obs_status');
+        delay_count = 3;
+        warnTemaSpeak();
+    }
+}
+
+// Toggle button visibilities depending on autoconnect state
+function toggleConnectButtons(isAutoConnect) {
+    const btnAll = document.getElementById('btnConnectAll');
+    const btnTS = document.getElementById('btnConnectTS');
+    const btnOBS = document.getElementById('btnConnectOBS');
+
+    if (!btnAll || !btnTS || !btnOBS) return;
+
+    if (isAutoConnect) {
+        btnAll.style.display = 'block';
+        btnTS.style.display = 'none';
+        btnOBS.style.display = 'none';
+    } else {
+        btnAll.style.display = 'none';
+        btnTS.style.display = 'block';
+        btnOBS.style.display = 'block';
+    }
+}
+
+function setMarkerToConnecting(elementId, isDisconnecting=false) {
     const marker = document.getElementById(elementId);
     if (!marker) return;
 
     const textSpan = marker.querySelector('.status-text');
     marker.classList.remove('status-disconnected', 'status-connected');
     marker.classList.add('status-connecting');
-    if (textSpan) textSpan.textContent = 'Connecting...';
+    if (textSpan) textSpan.textContent = isDisconnecting ? "Disconnecting..." : 'Connecting...';
 
     if (elementId === "ts_status") {
         document.getElementById('btnConnectTS').disabled = true;
@@ -140,10 +194,27 @@ function setMarkerToConnecting(elementId) {
 }
 
 // 4. Action button handlers for triggering connection flows
-async function connectToTeamspeak() {
+async function connectAllConnections() {
+    const btn = document.getElementById('btnConnectAll');
+    if (btn) btn.disabled = true;
+    setMarkerToConnecting('ts_status');
+    setMarkerToConnecting('obs_status');
+
+    await apiFetch('connect_all');
+
+    if (btn) btn.disabled = false;
+    delay_count = 3;
+    await checkConnectionState();
+}
+
+function warnTemaSpeak() {
     if (document.getElementById("teamspeak_api").value == "") {
         showError("Please authorize the application in TeamSpeak 6", "Warning", true);
     }
+}
+
+async function connectToTeamspeak() {
+    warnTemaSpeak();
 
     const btn = document.getElementById('btnConnectTS');
     if (btn) btn.disabled = true;
@@ -152,6 +223,7 @@ async function connectToTeamspeak() {
     await apiFetch('connect_teamspeak');
 
     if (btn) btn.disabled = false;
+    delay_count = 3;
     await checkConnectionState();
 }
 
@@ -163,6 +235,7 @@ async function connectToOBS() {
     await apiFetch('connect_obs');
 
     if (btn) btn.disabled = false;
+    delay_count = 3;
     await checkConnectionState();
 }
 
@@ -172,12 +245,13 @@ async function stopAllConnections() {
     if (btn) btn.disabled = true;
 
     // Set both to connecting/waiting visual patterns while closing
-    setMarkerToConnecting('ts_status');
-    setMarkerToConnecting('obs_status');
+    setMarkerToConnecting('ts_status', true);
+    setMarkerToConnecting('obs_status', true);
 
     await apiFetch("stop_all");
 
     if (btn) btn.disabled = false;
+    delay_count = 3;
     await checkConnectionState();
 }
 
@@ -220,6 +294,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Bind event listeners to DOM buttons using specified IDs
     document.getElementById('btnSave')?.addEventListener('click', saveSettings);
+    document.getElementById('btnConnectAll')?.addEventListener('click', connectAllConnections);
     document.getElementById('ts_status')?.addEventListener('click', openTeamspeakDiagnostics);
     document.getElementById('obs_status')?.addEventListener('click', openObsDiagnostics);
     document.getElementById('btnConnectTS')?.addEventListener('click', connectToTeamspeak);
@@ -228,13 +303,5 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btnCloseError')?.addEventListener('click', () => {
         document.getElementById('errorPopup').classList.remove('show');
     });
-    document.getElementById('autoconnect')?.addEventListener('change', async (e) => {
-        await apiFetch('toggle_autoconnect', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ "value": e.target.checked })
-        });
-    });
+    document.getElementById('autoconnect')?.addEventListener('change', toggleAutoConnect);
 });

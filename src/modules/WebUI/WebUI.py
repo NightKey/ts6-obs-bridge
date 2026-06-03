@@ -16,9 +16,10 @@ class WebUI:
     update_settings_callback: Callable[[Settings], Coroutine[Any, Any, None]]
     toggle_autoconnect_callback: Callable[[bool], Coroutine[Any, Any, None]]
     get_state_callback: Callable[[], Tuple[bool, bool]]
+    connect_all_callback: Callable[[], None]
     connect_obs_callback: Callable[[], Coroutine[Any, Any, bool]]
     connect_teamspeak_callback: Callable[[], Coroutine[Any, Any, bool]]
-    stop_all_callback: Callable[[], Coroutine[Any, Any, None]]
+    stop_all_callback: Callable[[], None]
     ts_user_map_callback: Callable[[], dict]
     obs_scene_map_callback: Callable[[], dict]
 
@@ -29,9 +30,10 @@ class WebUI:
             get_settings_callback: Callable[[], Settings],
             update_settings_callback: Callable[[Settings], Coroutine[Any, Any, None]],
             get_state_callback: Callable[[], Tuple[bool, bool]],
+            connect_all_callback: Callable[[], None],
             connect_obs_callback: Callable[[], Coroutine[Any, Any, bool]],
             connect_teamspeak_callback: Callable[[], Coroutine[Any, Any, bool]],
-            stop_all_callback: Callable[[], Coroutine[Any, Any, None]],
+            stop_all_callback: Callable[[], None],
             ts_user_map_callback: Callable[[], dict],
             obs_scene_map_callback: Callable[[], dict],
             toggle_autoconnect_callback: Callable[[bool], Coroutine[Any, Any, None]]
@@ -40,6 +42,7 @@ class WebUI:
         self.get_settings_callback = get_settings_callback
         self.update_settings_callback = update_settings_callback
         self.get_state_callback = get_state_callback
+        self.connect_all_callback = connect_all_callback
         self.connect_obs_callback = connect_obs_callback
         self.connect_teamspeak_callback = connect_teamspeak_callback
         self.stop_all_callback = stop_all_callback
@@ -53,6 +56,7 @@ class WebUI:
         self.server.add_url_rule("/toggle_autoconnect", self.toggle_autoconnect, Protocol.Post)
         self.server.add_url_rule("/get_settings", self.get_settings, disable_cache=True)
         self.server.add_url_rule("/get_state", self.get_state, disable_cache=True)
+        self.server.add_url_rule("/connect_all", self.connect_all)
         self.server.add_url_rule("/connect_obs", self.connect_obs)
         self.server.add_url_rule("/connect_teamspeak", self.connect_teamspeak)
         self.server.add_url_rule("/stop_all", self.stop_all)
@@ -65,7 +69,7 @@ class WebUI:
 
 
     def start(self) -> None:
-        self.server.serve_forever(templates=templates.__dict__, static=static.__dict__)
+        self.server.serve_forever_threaded(templates=templates.__dict__, static=static.__dict__)
 
     def index(self, _) -> str:
         return self.server.render_template_file(name="index.html", page_title="Stream Control Panel")
@@ -100,6 +104,10 @@ class WebUI:
         states = self.get_state_callback()
         return dumps({"teamspeak_connected":states[0], "OBS_connected":states[1]})
 
+    def connect_all(self, _: UrlData) -> str:
+        self.connect_all_callback()
+        return "{}"
+
     async def connect_obs(self, _: UrlData) -> str:
         try:
             return dumps({"connected":await self.connect_obs_callback()})
@@ -113,7 +121,7 @@ class WebUI:
             raise KnownError(reason=ex.message, response_code=500)
 
     async def stop_all(self, _: UrlData) -> str:
-        await self.stop_all_callback()
+        self.stop_all_callback()
         return "{}"
 
     def close(self):

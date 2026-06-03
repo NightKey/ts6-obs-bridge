@@ -49,3 +49,5 @@ class Settings:
             self.obs_scene != other.obs_scene
         )
 
+    def __str__(self) -> str:
+        return f"Settings[teamspeak_ip: {self.teamspeak_ip} teamspeak_port: {self.teamspeak_port} teamspeak_api: {self.teamspeak_api} obs_ip: {self.obs_ip} obs_port: {self.obs_port} obs_password: {self.obs_password} obs_scene: {self.obs_scene} autoconnect: {self.autoconnect}]"

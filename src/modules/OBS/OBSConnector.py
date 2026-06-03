@@ -19,10 +19,9 @@ class OBSConnector:
     scene: str
     user_scenes: Dict[str, SceneItem] = {}
     requested_states: Dict[str, UserStatus] = {}
-    stopping: Event = Event()
-    message_queue: Queue = Queue()
+    stop_event: Event = Event()
+    message_queue: Queue
     websocket: ClientConnection | None = None
-    connection_failed_callback: Callable[[Status], None]
 
     @property
     def request_id(self) -> str:
@@ -32,9 +31,8 @@ class OBSConnector:
     def is_connected(self) -> bool:
         return self.websocket is not None and self.websocket.state == State.OPEN
 
-    def __init__(self, logger: Logger, connection_failed_callback: Callable[[Status], None]):
+    def __init__(self, logger: Logger):
         self.logger = logger
-        self.connection_failed_callback = connection_failed_callback
 
     async def send(self, data: dict, op_code: OpCode):
         self.logger.trace(f"Sending opcode: {op_code.name}")
@@ -49,21 +47,21 @@ class OBSConnector:
 
     async def retrieve_loop(self):
         self.logger.debug("Starting retrieve loop")
-        while not self.stopping.is_set():
+        while not self.stop_event.is_set():
             try:
                 async with timeout(0.5):
                     message = await self.websocket.recv()
                     await self.message_queue.put(message)
+                self.logger.trace(".")
             except TimeoutError:
                 continue
             except ConnectionClosedOK:
                 self.logger.warning("OBS Closed the connection without error")
-                self.connection_failed_callback(Status.OBSNotReady)
-                await self.close()
+                self.stop_event.set()
             except ConnectionClosedError as cce:
                 self.logger.error("OBS Closed connection with error", cce)
-                self.connection_failed_callback(Status.OBSNotReady)
-                await self.close()
+                self.stop_event.set()
+        await self.__cleanup()
 
     async def get_message(self, required_op_code: OpCode) -> dict:
         message = await self.message_queue.get()
@@ -78,8 +76,9 @@ class OBSConnector:
             raise OBSException(f"Response identifier {response['op']} is not valid {required_op_code.value}")
         return response
 
-    async def connect(self, obs_ip: str, obs_port: int, obs_password: str, obs_scene: str) -> Status:
-        self.stopping.clear()
+    async def connect(self, obs_ip: str, obs_port: int, obs_password: str, obs_scene: str) -> bool:
+        self.stop_event.clear()
+        self.message_queue = Queue()
         self.logger.info(f"Connecting to OBS on ws://{obs_ip}:{obs_port} with scene: {obs_scene}")
         self.scene = obs_scene
         self.websocket = await connect(f"ws://{obs_ip}:{obs_port}/websockets")
@@ -119,14 +118,18 @@ class OBSConnector:
             raise OBSException("Bad RpcVersion")
 
         await self.init_obs()
-        return Status.OBSReady
+        return True
 
-    async def close(self):
+    def close(self) -> None:
         if self.websocket is None: return
         self.logger.info("Closing OBS connector")
-        self.stopping.set()
+        self.stop_event.set()
+
+    async def __cleanup(self):
+        self.logger.info("Cleanup")
         await self.websocket.close()
         self.websocket = None
+        self.user_scenes.clear()
 
     async def init_obs(self) -> None:
         self.logger.info("Initializing OBS")

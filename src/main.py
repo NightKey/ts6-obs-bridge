@@ -1,15 +1,16 @@
 import asyncio
-from collections import deque
-from asyncio import AbstractEventLoop
+from asyncio import sleep
 from json import load
-from typing import Tuple, List, Callable, Any, Deque, Coroutine, Dict
+from threading import Thread
+from typing import Tuple
 from os import path
+import time
 import atexit
 
 from smdb_db_manager import Version
 from smdb_logger import Logger, LEVEL
 
-from modules import Settings, Status, UserStatus, WebUI, Database, OBSConnector, TeamSpeak6Connector, OBSException, \
+from modules import Settings, UserStatus, WebUI, Database, OBSConnector, TeamSpeak6Connector, OBSException, \
     TeamSpeakException
 
 DATA_FOLDER = path.join(path.abspath('.'), "data")
@@ -19,19 +20,16 @@ fp.close()
 
 class Main:
     settings: Settings
-    status: Status
     logger: Logger
     web_ui: WebUI
     database: Database
-    loop: AbstractEventLoop
     obs_connector: OBSConnector
     team_speak_6_connector: TeamSpeak6Connector
-    obs_command_queue: Deque[Tuple[Callable[[...], Coroutine[Any, Any, None]], Dict[str, Any]]] = deque()
+    stop_event: asyncio.Event = asyncio.Event()
 
-    def __init__(self, logger: Logger, loop: AbstractEventLoop):
+    def __init__(self, logger: Logger):
+        loop = asyncio.new_event_loop()
         self.logger = logger
-        self.loop = loop
-        self.status = Status.StandingBy
         self.database = loop.run_until_complete(
             Database.create(
                 logger=Logger(log_to_console=True, use_caller_name=True, use_file_names=True, level=LEVEL.from_string(LEVELS["database"])),
@@ -45,6 +43,7 @@ class Main:
             get_settings_callback=self.get_settings,
             update_settings_callback=self.update_settings,
             get_state_callback=self.get_state,
+            connect_all_callback=self.connect_all,
             connect_obs_callback=self.connect_to_obs,
             connect_teamspeak_callback=self.connect_to_teamspeak,
             stop_all_callback=self.stop_all,
@@ -52,16 +51,21 @@ class Main:
             obs_scene_map_callback=self.get_obs_scene_map,
             toggle_autoconnect_callback=self.toggle_autoconnect
         )
+        self.obs_connector = OBSConnector(
+            logger=Logger(log_to_console=True, use_caller_name=True, use_file_names=True, level=LEVEL.from_string(LEVELS["obs"]))
+        )
         self.team_speak_6_connector = TeamSpeak6Connector(
             logger=Logger(log_to_console=True, use_caller_name=True, use_file_names=True, level=LEVEL.from_string(LEVELS["teamspeak"])),
-            connection_failed_callback=self.connection_failed_callback,
             user_status_changed_callback=self.user_state_changed,
             user_deafened_changed_callback=self.deafen_toggled
         )
-        self.obs_connector = OBSConnector(
-            logger=Logger(log_to_console=True, use_caller_name=True, use_file_names=True, level=LEVEL.from_string(LEVELS["obs"])),
-            connection_failed_callback=self.connection_failed_callback
-        )
+
+    def connect_all(self) -> None:
+        if self.stop_event.is_set():
+            self.logger.debug("Resetting stop event")
+            self.stop_event.clear()
+            self.logger.debug("Starting auto connect")
+            Thread(target=self.autoconnect, name="Auto connect loop").start()
 
     async def connect_to_teamspeak(self) -> bool:
         self.logger.info("Connecting to TeamSpeak")
@@ -73,57 +77,74 @@ class Main:
             )
             self.settings.teamspeak_api = auth
             await self.update_settings(self.settings)
-        result = await self.team_speak_6_connector.connect(
+        return await self.team_speak_6_connector.connect(
             teamspeak_ip=self.settings.teamspeak_ip,
             teamspeak_port=self.settings.teamspeak_port,
             teamspeak_api=self.settings.teamspeak_api
         )
-        self.status |= result
-        return bool(self.status & Status.TeamSpeakReady)
 
     async def connect_to_obs(self) -> bool:
         self.logger.info("Connecting to OBS")
         if self.obs_connector.is_connected: return True
-        result = await  self.obs_connector.connect(
+        return await  self.obs_connector.connect(
             obs_ip=self.settings.obs_ip,
             obs_port=self.settings.obs_port,
             obs_password=self.settings.obs_password,
             obs_scene=self.settings.obs_scene
         )
-        self.status |= result
-        return bool(self.status & Status.OBSReady)
-
-    def connection_failed_callback(self, failed_mask: Status):
-        self.logger.warning(f"Connection failed {failed_mask.name}")
-        self.status &= failed_mask
 
     def get_state(self) -> Tuple[bool, bool]:
         return bool(self.team_speak_6_connector.is_connected), bool(self.obs_connector.is_connected)
 
     def start(self):
         self.logger.trace(f"Current settings: {self.settings}")
-        if self.settings.autoconnect:
-            self.logger.info("Auto connecting to Team Speak and OBS")
-            self.loop.run_until_complete(self.autoconnect())
+        if self.settings and self.settings.autoconnect:
+            Thread(target=self.autoconnect, name="Auto connect loop").start()
         self.logger.info("Serving webUI at http://127.0.0.1:12345")
         self.web_ui.start()
+        while True:
+            try:
+                time.sleep(0.5)
+            except KeyboardInterrupt:
+                self.close()
+                break
 
-    async def autoconnect(self) -> None:
-        try:
-            await self.connect_to_teamspeak()
-        except TeamSpeakException as tse:
-            self.logger.error("Team Speak failed to connect", tse)
-        try:
-            await self.connect_to_obs()
-        except OBSException as oe:
-            self.logger.error("OBS failed to connect", oe)
+    def autoconnect(self) -> None:
+        if not self.settings or not self.settings.autoconnect: return
+        self.logger.debug("Starting auto connect loop")
+        asyncio.new_event_loop().run_until_complete(self.autoconnect_loop())
+
+    async def autoconnect_loop(self) -> None:
+        while not self.stop_event.is_set() and self.settings and self.settings.autoconnect:
+            try:
+                self.logger.trace(f"Checking if team speak is connected {self.team_speak_6_connector.is_connected}")
+                if not self.team_speak_6_connector.is_connected:
+                     await self.connect_to_teamspeak()
+            except TeamSpeakException as tse:
+                self.logger.error("Team Speak failed to connect", tse)
+            except ConnectionRefusedError:
+                pass
+            try:
+                self.logger.trace(f"Checking if OBS is connected {self.team_speak_6_connector.is_connected}")
+                if not self.obs_connector.is_connected:
+                    await self.connect_to_obs()
+            except OBSException as oe:
+                self.logger.error("OBS failed to connect", oe)
+            except ConnectionRefusedError:
+                pass
+            await sleep(5)
+        await sleep(10)
 
     def get_settings(self) -> Settings:
         return self.settings
 
     async def toggle_autoconnect(self, value: bool) -> None:
+        self.logger.debug(f"Toggling auto connect to {value}")
         self.settings.autoconnect = value
+        self.logger.trace("Updating settings")
         await self.update_settings(self.settings)
+        if self.settings.autoconnect:
+            Thread(target=self.autoconnect, name="Auto connect loop").start()
 
     async def update_settings(self, data: Settings) -> None:
         if await self.database.upsert_settings(data):
@@ -133,10 +154,10 @@ class Main:
             (reconnect_teamspeak, reconnect_obs) = self.settings.which_changed(data)
             self.settings = data
             if reconnect_obs and self.obs_connector.is_connected:
-                await self.obs_connector.close()
+                self.obs_connector.close()
                 await self.connect_to_obs()
             if reconnect_teamspeak and self.team_speak_6_connector.is_connected:
-                await self.team_speak_6_connector.close()
+                self.team_speak_6_connector.close()
                 await self.connect_to_teamspeak()
 
     async def user_state_changed(self, user: str, target_state: UserStatus) -> None:
@@ -147,13 +168,15 @@ class Main:
         self.logger.debug("Deafen toggled")
         await self.obs_connector.toggle_deafen(is_deafened)
 
-    async def stop_all(self) -> None:
-        await self.obs_connector.close()
-        await self.team_speak_6_connector.close()
+    def stop_all(self) -> None:
+        self.stop_event.set()
+        self.obs_connector.close()
+        self.team_speak_6_connector.close()
 
     def close(self):
-        self.loop.run_until_complete(self.stop_all())
-        self.loop.run_until_complete(self.database.close())
+        loop = asyncio.new_event_loop()
+        self.stop_all()
+        loop.run_until_complete(self.database.close())
         self.web_ui.close()
 
     def get_ts_user_map(self) -> dict:
@@ -165,7 +188,7 @@ class Main:
 if __name__=="__main__":
     main_logger = Logger(log_to_console=True, use_caller_name=True, use_file_names=True, level=LEVEL.from_string(LEVELS["main"]))
     main_logger.info("Starting application")
-    main = Main(main_logger, asyncio.new_event_loop())
+    main = Main(main_logger)
     main_logger.debug("Registering atexit")
     atexit.register(main.close)
     main.start()

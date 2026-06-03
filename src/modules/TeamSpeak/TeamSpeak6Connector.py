@@ -1,17 +1,16 @@
 from asyncio import Event, timeout, create_task
 from typing import Callable, Dict, List, Coroutine, Any
 
-from websockets import connect, ClientConnection, ConnectionClosedOK, ConnectionClosedError
+from websockets import connect, ClientConnection, ConnectionClosedOK, ConnectionClosedError, State
 from json import loads, dumps
 from smdb_logger import Logger
 
 from . import TeamSpeakException, ClientInfo
-from .. import Status, UserStatus
+from .. import UserStatus
 
 
 class TeamSpeak6Connector:
     logger: Logger
-    connection_failed_callback: Callable[[Status], None]
     user_status_changed_callback: Callable[[str, UserStatus], Coroutine[Any, Any, None]]
     user_deafened_changed_callback: Callable[[bool], Coroutine[Any, Any, None]]
     user: ClientInfo
@@ -21,17 +20,15 @@ class TeamSpeak6Connector:
 
     @property
     def is_connected(self) -> bool:
-        return self.websocket is not None
+        return self.websocket is not None and self.websocket.state == State.OPEN
 
     def __init__(
             self,
             logger: Logger,
-            connection_failed_callback: Callable[[Status], None],
             user_status_changed_callback: Callable[[str, UserStatus], Coroutine[Any, Any, None]],
             user_deafened_changed_callback: Callable[[bool], Coroutine[Any, Any, None]]
     ):
         self.logger = logger
-        self.connection_failed_callback = connection_failed_callback
         self.user_status_changed_callback = user_status_changed_callback
         self.user_deafened_changed_callback = user_deafened_changed_callback
 
@@ -67,7 +64,7 @@ class TeamSpeak6Connector:
         api_key = response["payload"]["apiKey"]
         return api_key
 
-    async def connect(self, teamspeak_ip: str, teamspeak_port: int,teamspeak_api: str) -> Status:
+    async def connect(self, teamspeak_ip: str, teamspeak_port: int,teamspeak_api: str) -> bool:
         self.stop_event.clear()
         self.logger.info("Connecting ot teamspeak")
         auth_request = {
@@ -96,7 +93,7 @@ class TeamSpeak6Connector:
         self.logger.debug(f"User id: {self.user.id}")
 
         create_task(self.receive_loop())
-        return Status.TeamSpeakReady
+        return True
 
     async def load_clients_present(self, user_id: int, clients: List[dict]) -> None:
         self.logger.info("Loading clients present")
@@ -110,16 +107,19 @@ class TeamSpeak6Connector:
             self.user_status_map[client_info.id] = client_info
             await self.user_state_changed(client_info.name, self.evaluate_client_info(client_info))
 
-    async def close(self) -> None:
-        if self.websocket is None: return
+    def close(self) -> None:
+        if self.stop_event.is_set(): return
         self.logger.info("Closing TeamSpeak6 connection")
         self.stop_event.set()
+
+    async def __cleanup(self) -> None:
+        self.logger.info("Cleanup")
         await self.websocket.close()
         self.user_status_map.clear()
         self.websocket = None
 
     async def receive_loop(self) -> None:
-        while not self.stop_event.is_set() and self.websocket is not None:
+        while not self.stop_event.is_set():
             try:
                 async with timeout(0.5):
                     message = loads(await self.websocket.recv())
@@ -132,18 +132,18 @@ class TeamSpeak6Connector:
                         await self.client_channel_group_changed(message["payload"])
                     elif message["type"] == "clientMoved":
                         await self.client_moved(message["payload"])
+                self.logger.trace(".")
             except TimeoutError:
                 pass
             except ConnectionClosedOK:
                 self.logger.info("Connection closed by server without error")
-                self.connection_failed_callback(Status.TeamSpeakNotReady)
+                self.stop_event.set()
             except ConnectionClosedError as cce:
                 self.logger.error("Connection closed with error", cce)
-                self.connection_failed_callback(Status.TeamSpeakNotReady)
-                await self.websocket.close()
-                self.websocket = None
+                self.stop_event.set()
             except Exception as ex:
                 self.logger.error("Error during retrieving message", ex)
+        await self.__cleanup()
 
 
     async def client_property_updated(self, message: dict) -> None:
