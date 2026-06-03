@@ -11,6 +11,14 @@ When started, a web UI will be hosted on http://127.0.0.1:12345.
 
 If the ports and IPs are correct, you just need to fill in the password and the scene name for OBS.
 
+## Auto-connect
+With the auto-connect toggle, you can enable the autoconnection to the setup OBS and Team Speak websocket.
+When enabled, the two connect buttons will be swapped to a "connect all" button.
+
+![connect_all](resources/connect_all.png)
+
+In this mode, the application will try to reconnect every 5 seconds when a connection is dropped.
+
 ## Team Speak
 > [!CAUTION]
 > For the use, you need to connect to the server you want to use for the stream on Team Speak before connecting the application to it.
@@ -29,7 +37,7 @@ When connected you will be able to click on the "CONNECTED" marker to open a dia
 
 ## OBS
 In OBS you will need to create a scene for every user with the name `ts6-obs-[USERNAME]` Where `[USERNAME]` should be the exact username on Team Speak.
-Under this scene you should set up the following sources:
+Under this scene you can set up the following sources:
  - [muted](#muted)
  - [speaking](#speaking)
  - [quiet](#quiet)
