@@ -31,3 +31,4 @@ del "dist\TeamSpeak-OBS-Bridge-App-Windows.zip"
 cd dist
 tar -a -cvf "TeamSpeak-OBS-Bridge-App-Windows.zip" "TeamSpeak-OBS-Bridge-App"
 git stash pop
+git stash clear

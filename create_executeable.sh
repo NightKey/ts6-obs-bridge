@@ -32,3 +32,4 @@ cp -r "src/modules/WebUI/templates" "dist/TeamSpeak-OBS-Bridge-App/_internal/mod
 rm "dist/TeamSpeak-OBS-Bridge-App-Linux.tar.gz"
 tar -czvf "dist/TeamSpeak-OBS-Bridge-App-Linux.tar.gz" "dist/TeamSpeak-OBS-Bridge-App"
 git stash pop
+git stash clear

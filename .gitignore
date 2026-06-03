@@ -4,3 +4,4 @@ venv*
 .idea*
 *.db*
 *.spec
+*__pycache__*
