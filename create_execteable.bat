@@ -25,8 +25,8 @@ echo     "main":"INFO">> dist\TeamSpeak-OBS-Bridge-App\data\levels
 echo }>> dist\TeamSpeak-OBS-Bridge-App\data\levels
 mkdir "dist\TeamSpeak-OBS-Bridge-App\_internal\modules\WebUI\static"
 mkdir "dist\TeamSpeak-OBS-Bridge-App\_internal\modules\WebUI\templates"
-robocopy "src\modules\WebUI\static" "dist\TeamSpeak-OBS-Bridge-App\_internal\modules\WebUI\static" /e /copyall /r:0
-robocopy "src\modules\WebUI\templates" "dist\TeamSpeak-OBS-Bridge-App\_internal\modules\WebUI\templates" /e /copyall /r:0
+robocopy "src\modules\WebUI\static" "dist\TeamSpeak-OBS-Bridge-App\_internal\modules\WebUI\static" /e /copy:DAT /r:0
+robocopy "src\modules\WebUI\templates" "dist\TeamSpeak-OBS-Bridge-App\_internal\modules\WebUI\templates" /e /copy:DAT /r:0
 del "dist\TeamSpeak-OBS-Bridge-App-Windows.zip"
 cd dist
 tar -a -cvf "TeamSpeak-OBS-Bridge-App-Windows.zip" "TeamSpeak-OBS-Bridge-App"
