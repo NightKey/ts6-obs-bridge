@@ -38,9 +38,11 @@ When connected you will be able to click on the "CONNECTED" marker to open a dia
 ## OBS
 In OBS you will need to create a scene for every user with the name `ts6-obs-[USERNAME]` Where `[USERNAME]` should be the exact username on Team Speak.
 Under this scene you can set up the following sources:
- - [muted](#muted)
- - [speaking](#speaking)
- - [quiet](#quiet)
+ - [[ANYTHING]-muted](#muted)
+ - [[ANYTHING]-speaking](#speaking)
+ - [[ANYTHING]-quiet](#quiet)
+
+Where `[ANYTHING]-` is filtered out so you can have multiple scenes set up for multiple users. For ease of use, `[USERNAME]` is recommended.
 
 ![obs_scenes](resources/obs_scenes.png)
 

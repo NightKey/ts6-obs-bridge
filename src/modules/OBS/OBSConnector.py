@@ -164,7 +164,7 @@ class OBSConnector:
             return
         requests = []
         for item in response['d']["responseData"]["sceneItems"]:
-            subitem_name = item["sourceName"]
+            subitem_name = item["sourceName"].split('-')[-1]
             sub_item = SceneItem(itemName=subitem_name, itemId=item["sceneItemId"], enabled=scene_user in self.requested_states and subitem_name == self.requested_states[scene_user].value)
             requests.append(sub_item.get_request(scene.itemName,self.request_id).to_request_dict())
             scene.add_sub_item(sub_item)
