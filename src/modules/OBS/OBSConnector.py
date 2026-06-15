@@ -1,7 +1,8 @@
-from asyncio import timeout, Queue, create_task, Event
+import asyncio
+from asyncio import timeout, Queue, create_task, Event, Task
 import base64
 import hashlib
-from typing import Callable, Tuple, Dict
+from typing import Dict
 
 from smdb_logger import Logger
 from websockets import connect, ClientConnection, ConnectionClosedOK, ConnectionClosedError, State
@@ -10,18 +11,22 @@ from time import time
 import random
 
 from . import OpCode, SceneItem, Request, RequestType, OBSException
-from .. import Status, UserStatus
+from .. import UserStatus, BaseConnector, async_wrapped
+
 
 # Documentation: https://github.com/obsproject/obs-websocket/blob/master/docs/generated/protocol.md
 
-class OBSConnector:
-    logger: Logger
+class OBSConnector(BaseConnector):
+    __logger: Logger
     scene: str
     user_scenes: Dict[str, SceneItem] = {}
     requested_states: Dict[str, UserStatus] = {}
     stop_event: Event = Event()
     message_queue: Queue
+    watchdog_loop_task: Task | None = None
     websocket: ClientConnection | None = None
+    obs_initialized_event: Event = Event()
+    obs_ready: bool = False
 
     @property
     def request_id(self) -> str:
@@ -31,8 +36,16 @@ class OBSConnector:
     def is_connected(self) -> bool:
         return self.websocket is not None and self.websocket.state == State.OPEN
 
+    @property
+    def logger(self) -> Logger:
+        return self.__logger
+
+    @property
+    def name(self) -> str:
+        return "OBSConnector"
+
     def __init__(self, logger: Logger):
-        self.logger = logger
+        self.__logger = logger
 
     async def send(self, data: dict, op_code: OpCode):
         self.logger.trace(f"Sending opcode: {op_code.name}")
@@ -45,6 +58,16 @@ class OBSConnector:
             )
         )
 
+    @async_wrapped
+    async def watchdog_loop(self):
+        self.logger.trace("Starting watchdog loop")
+        while not self.stop_event.is_set():
+            self.logger.trace(".")
+            if not self.obs_initialized_event.is_set() and self.obs_ready:
+                await self.__re_init_obs()
+            await asyncio.sleep(0.5)
+
+    @async_wrapped
     async def retrieve_loop(self):
         self.logger.debug("Starting retrieve loop")
         while not self.stop_event.is_set():
@@ -63,6 +86,7 @@ class OBSConnector:
                 self.stop_event.set()
         await self.__cleanup()
 
+    @async_wrapped
     async def get_message(self, required_op_code: OpCode) -> dict:
         message = await self.message_queue.get()
         if not message:
@@ -76,9 +100,11 @@ class OBSConnector:
             raise OBSException(f"Response identifier {response['op']} is not valid {required_op_code.value}")
         return response
 
+    @async_wrapped
     async def connect(self, obs_ip: str, obs_port: int, obs_password: str, obs_scene: str) -> bool:
         self.stop_event.clear()
         self.message_queue = Queue()
+        self.watchdog_loop_task = asyncio.create_task(self.watchdog_loop(), name="watchdog task")
         self.logger.info(f"Connecting to OBS on ws://{obs_ip}:{obs_port} with scene: {obs_scene}")
         self.scene = obs_scene
         self.websocket = await connect(f"ws://{obs_ip}:{obs_port}/websockets")
@@ -118,6 +144,7 @@ class OBSConnector:
             raise OBSException("Bad RpcVersion")
 
         await self.init_obs()
+        self.obs_ready = True
         return True
 
     def close(self) -> None:
@@ -125,12 +152,29 @@ class OBSConnector:
         self.logger.info("Closing OBS connector")
         self.stop_event.set()
 
+    @async_wrapped
     async def __cleanup(self):
         self.logger.info("Cleanup")
         await self.websocket.close()
         self.websocket = None
         self.user_scenes.clear()
+        self.obs_ready = False
+        if not self.watchdog_loop_task.done():
+            self.watchdog_loop_task.cancel()
+        self.watchdog_loop_task = None
 
+    @async_wrapped
+    async def re_init_obs(self) -> None:
+        self.obs_initialized_event.clear()
+        while not self.obs_initialized_event.is_set():
+            await asyncio.sleep(0.1)
+
+    @async_wrapped
+    async def __re_init_obs(self) -> None:
+        self.user_scenes.clear()
+        await self.init_obs()
+
+    @async_wrapped
     async def init_obs(self) -> None:
         self.logger.info("Initializing OBS")
         data = Request(RequestType.GetSceneList, self.request_id).to_request_dict()
@@ -149,7 +193,9 @@ class OBSConnector:
                 self.user_scenes[scene_user] = item
                 await self.set_all_to_known(item, scene_user)
                 if scene_user in self.requested_states: del self.requested_states[scene_user]
+        self.obs_initialized_event.set()
 
+    @async_wrapped
     async def set_all_to_known(self, scene: SceneItem, scene_user: str) -> None:
         self.logger.debug(f"Setting {scene} to a known, all off state if no request was for that name")
         request = Request(
@@ -178,6 +224,7 @@ class OBSConnector:
         await self.send(batch_request, OpCode.RequestBatch)
         await self.get_message(OpCode.RequestBatchResponse)
 
+    @async_wrapped
     async def set_user_to(self, name: str, target_state: UserStatus, only_present: bool = False) -> None:
         if not self.is_connected:
             self.requested_states[name] = target_state
@@ -202,6 +249,7 @@ class OBSConnector:
         await self.send(batch_request, OpCode.RequestBatch)
         await self.get_message(OpCode.RequestBatchResponse)
 
+    @async_wrapped
     async def toggle_deafen(self, is_deafened: bool):
         self.logger.debug(f"Toggling deafen to {is_deafened}")
         for name in self.user_scenes.keys():

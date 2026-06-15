@@ -62,3 +62,5 @@ When connected you will be able to click on the "CONNECTED" marker to open a dia
 On this page, you will be able to see all scenes with the correct names, and all images under each scene.
 The inactive marker will change, when the user connects to your room on Team Speak.
 The `queue` shows how many requests are waiting to be red by the connector for diagnostics porpoises.
+
+The reload button will re-initialize the OBS connection, re-loading all available scenes.

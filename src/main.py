@@ -11,7 +11,7 @@ from smdb_db_manager import Version
 from smdb_logger import Logger, LEVEL
 
 from modules import Settings, UserStatus, WebUI, Database, OBSConnector, TeamSpeak6Connector, OBSException, \
-    TeamSpeakException
+    TeamSpeakException, show_open_calls
 
 DATA_FOLDER = path.join(path.abspath('.'), "data")
 fp = open(path.join(DATA_FOLDER, "levels"), 'r')
@@ -49,6 +49,7 @@ class Main:
             stop_all_callback=self.stop_all,
             ts_user_map_callback=self.get_ts_user_map,
             obs_scene_map_callback=self.get_obs_scene_map,
+            re_init_obs_callback=self.re_init_obs,
             toggle_autoconnect_callback=self.toggle_autoconnect
         )
         self.obs_connector = OBSConnector(
@@ -93,6 +94,9 @@ class Main:
             obs_scene=self.settings.obs_scene
         )
 
+    async def re_init_obs(self) -> None:
+        await self.obs_connector.re_init_obs()
+
     def get_state(self) -> Tuple[bool, bool]:
         return bool(self.team_speak_6_connector.is_connected), bool(self.obs_connector.is_connected)
 
@@ -102,6 +106,7 @@ class Main:
             Thread(target=self.autoconnect, name="Auto connect loop").start()
         self.logger.info("Serving webUI at http://127.0.0.1:12345")
         self.web_ui.start()
+        show_open_calls(self.logger.trace)
         while True:
             try:
                 time.sleep(0.5)
@@ -192,3 +197,4 @@ if __name__=="__main__":
     main_logger.debug("Registering atexit")
     atexit.register(main.close)
     main.start()
+    show_open_calls(main_logger.trace)

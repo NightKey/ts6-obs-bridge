@@ -1,4 +1,5 @@
 const endpoint = '/get_obs_scenes';
+const reinitEndpoint = '/reinit_obs'
 const pollInterval = 2000; // Polls every 2 seconds
 
 async function fetchObsData() {
@@ -94,6 +95,32 @@ function renderScenes(scenes) {
     }).join('');
 }
 
+async function reinitializeObs() {
+    const reinitBtn = document.getElementById('refreshObsBtn');
+    if (!reinitBtn) return;
+
+    try {
+        // Optimistically disable UI interaction during transition
+        reinitBtn.disabled = true;
+        reinitBtn.classList.add('spinning');
+
+        const response = await fetch(reinitEndpoint, { method: 'POST' }); // Adjust to method: 'GET' if required by backend
+
+        if (!response.ok) {
+            throw new Error(`Reinit failed with status: ${response.status}`);
+        }
+
+        // Immediately update data loop seamlessly for the user
+        await fetchObsData();
+    } catch (error) {
+        console.error("Failed to reinitialize OBS backend:", error);
+    } finally {
+        // Restore interactive state
+        reinitBtn.disabled = false;
+        reinitBtn.classList.remove('spinning');
+    }
+}
+
 // XSS mitigation handling for source text nodes coming out of the API layer
 function escapeHTML(str) {
     return String(str).replace(/&/g, '&amp;')
@@ -101,6 +128,10 @@ function escapeHTML(str) {
                       .replace(/>/g, '&gt;')
                       .replace(/"/g, '&quot;');
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('refreshObsBtn')?.addEventListener('click', reinitializeObs);
+});
 
 // Kickstart processing loop orchestration
 fetchObsData();

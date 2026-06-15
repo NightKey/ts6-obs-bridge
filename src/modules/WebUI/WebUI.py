@@ -22,6 +22,7 @@ class WebUI:
     stop_all_callback: Callable[[], None]
     ts_user_map_callback: Callable[[], dict]
     obs_scene_map_callback: Callable[[], dict]
+    re_init_obs_callback: Callable[[], Coroutine[Any, Any, None]]
 
 
     def __init__(
@@ -36,7 +37,8 @@ class WebUI:
             stop_all_callback: Callable[[], None],
             ts_user_map_callback: Callable[[], dict],
             obs_scene_map_callback: Callable[[], dict],
-            toggle_autoconnect_callback: Callable[[bool], Coroutine[Any, Any, None]]
+            toggle_autoconnect_callback: Callable[[bool], Coroutine[Any, Any, None]],
+            re_init_obs_callback: Callable[[], Coroutine[Any, Any, None]]
     ):
         self.logger = logger
         self.get_settings_callback = get_settings_callback
@@ -49,6 +51,7 @@ class WebUI:
         self.ts_user_map_callback = ts_user_map_callback
         self.obs_scene_map_callback = obs_scene_map_callback
         self.toggle_autoconnect_callback = toggle_autoconnect_callback
+        self.re_init_obs_callback = re_init_obs_callback
         self.server = HTMLServer(host="127.0.0.1", port=12345, root_path=path.dirname(__file__), logger=logger, title="Stream Control Panel")
         # Main page
         self.server.add_url_rule("/", self.index)
@@ -66,6 +69,7 @@ class WebUI:
         # OBS
         self.server.add_url_rule("/obs", self.obs)
         self.server.add_url_rule("/get_obs_scenes", self.obs_scene_map)
+        self.server.add_url_rule("/reinit_obs", self.re_init_obs, Protocol.Post)
 
 
     def start(self) -> None:
@@ -122,6 +126,10 @@ class WebUI:
 
     async def stop_all(self, _: UrlData) -> str:
         self.stop_all_callback()
+        return "{}"
+
+    async def re_init_obs(self, _: UrlData) -> str:
+        await self.re_init_obs_callback()
         return "{}"
 
     def close(self):

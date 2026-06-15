@@ -6,11 +6,11 @@ from json import loads, dumps
 from smdb_logger import Logger
 
 from . import TeamSpeakException, ClientInfo
-from .. import UserStatus
+from .. import UserStatus, BaseConnector, async_wrapped
 
 
-class TeamSpeak6Connector:
-    logger: Logger
+class TeamSpeak6Connector(BaseConnector):
+    __logger: Logger
     user_status_changed_callback: Callable[[str, UserStatus], Coroutine[Any, Any, None]]
     user_deafened_changed_callback: Callable[[bool], Coroutine[Any, Any, None]]
     user: ClientInfo
@@ -22,13 +22,21 @@ class TeamSpeak6Connector:
     def is_connected(self) -> bool:
         return self.websocket is not None and self.websocket.state == State.OPEN
 
+    @property
+    def logger(self) -> Logger:
+        return self.__logger
+
+    @property
+    def name(self) -> str:
+        return "TeamSpeak6Connector"
+
     def __init__(
             self,
             logger: Logger,
             user_status_changed_callback: Callable[[str, UserStatus], Coroutine[Any, Any, None]],
             user_deafened_changed_callback: Callable[[bool], Coroutine[Any, Any, None]]
     ):
-        self.logger = logger
+        self.__logger = logger
         self.user_status_changed_callback = user_status_changed_callback
         self.user_deafened_changed_callback = user_deafened_changed_callback
 
@@ -40,6 +48,7 @@ class TeamSpeak6Connector:
         if client_info.is_talking: return UserStatus.Speaking
         return UserStatus.Quiet
 
+    @async_wrapped
     async def request_auth(self, teamspeak_ip: str, teamspeak_port: int) -> str:
         self.logger.info("Requesting authentication from user")
         auth_request = {
@@ -64,6 +73,7 @@ class TeamSpeak6Connector:
         api_key = response["payload"]["apiKey"]
         return api_key
 
+    @async_wrapped
     async def connect(self, teamspeak_ip: str, teamspeak_port: int,teamspeak_api: str) -> bool:
         self.stop_event.clear()
         self.logger.info("Connecting ot teamspeak")
@@ -92,9 +102,10 @@ class TeamSpeak6Connector:
         await self.load_clients_present(response["payload"]["connections"][0]["clientId"],  response["payload"]["connections"][0]["clientInfos"])
         self.logger.debug(f"User id: {self.user.id}")
 
-        create_task(self.receive_loop())
+        create_task(self.retrieve_loop())
         return True
 
+    @async_wrapped
     async def load_clients_present(self, user_id: int, clients: List[dict]) -> None:
         self.logger.info("Loading clients present")
         self.logger.debug(f"Clients count: {len(clients)}")
@@ -112,13 +123,15 @@ class TeamSpeak6Connector:
         self.logger.info("Closing TeamSpeak6 connection")
         self.stop_event.set()
 
+    @async_wrapped
     async def __cleanup(self) -> None:
         self.logger.info("Cleanup")
         await self.websocket.close()
         self.user_status_map.clear()
         self.websocket = None
 
-    async def receive_loop(self) -> None:
+    @async_wrapped
+    async def retrieve_loop(self) -> None:
         while not self.stop_event.is_set():
             try:
                 async with timeout(0.5):
@@ -145,7 +158,7 @@ class TeamSpeak6Connector:
                 self.logger.error("Error during retrieving message", ex)
         await self.__cleanup()
 
-
+    @async_wrapped
     async def client_property_updated(self, message: dict) -> None:
         self.logger.debug("Processing clientPropertiesUpdated message")
         client_id = message["clientId"]
@@ -165,6 +178,7 @@ class TeamSpeak6Connector:
         await self.user_state_changed(client_info.name, new_status)
         self.user_status_map[client_info.id] = client_info
 
+    @async_wrapped
     async def talking_status_changed(self, message: dict) -> None:
         self.logger.debug("Processing talkStatusChanged message")
         talker_id = message["clientId"]
@@ -188,6 +202,7 @@ class TeamSpeak6Connector:
             old_info.is_muted = False
         self.user_status_map[old_info.id] = old_info
 
+    @async_wrapped
     async def client_channel_group_changed(self, message: dict) -> None:
         new_channel_id = message["channelId"]
         client_id = message["clientId"]
@@ -201,6 +216,7 @@ class TeamSpeak6Connector:
             )
         self.user.channel_id = new_channel_id
 
+    @async_wrapped
     async def client_moved(self, message: dict) -> None:
         client_id = message["clientId"]
         new_channel_id = message["newChannelId"]
@@ -235,10 +251,12 @@ class TeamSpeak6Connector:
                 self.evaluate_client_info(client_info)
             )
 
+    @async_wrapped
     async def user_state_changed(self, user_name: str | None, new_status: UserStatus) -> None:
         self.logger.debug(f"User {user_name} status {new_status}")
         if not self.user.is_deafened: await self.user_status_changed_callback(user_name, new_status)
 
+    @async_wrapped
     async def user_deafened_changed(self, status: bool) -> None:
         await self.user_deafened_changed_callback(status)
 

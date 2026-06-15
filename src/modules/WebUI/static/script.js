@@ -117,7 +117,7 @@ async function checkConnectionState() {
 
     // Checks key cases exactly matching your specs: "teamspeak_connected" and "OBS_connected"
     if (state.hasOwnProperty('teamspeak_connected')) {
-        if (delay_count === 0 || last_teamspeak_status != state.teamspeak_connected) {
+        if (delay_count === 0 || (last_teamspeak_status != state.teamspeak_connected)) {
             last_teamspeak_status = state.teamspeak_connected;
             updateStatusMarker('ts_status', state.teamspeak_connected);
             if (state.teamspeak_connected && document.getElementById("teamspeak_api").value == "") {
@@ -214,6 +214,7 @@ function warnTemaSpeak() {
 }
 
 async function connectToTeamspeak() {
+    if (last_teamspeak_status) return;
     warnTemaSpeak();
 
     const btn = document.getElementById('btnConnectTS');
@@ -228,6 +229,7 @@ async function connectToTeamspeak() {
 }
 
 async function connectToOBS() {
+    if (last_obs_status) return;
     const btn = document.getElementById('btnConnectOBS');
     if (btn) btn.disabled = true;
     setMarkerToConnecting('obs_status');
@@ -245,8 +247,8 @@ async function stopAllConnections() {
     if (btn) btn.disabled = true;
 
     // Set both to connecting/waiting visual patterns while closing
-    setMarkerToConnecting('ts_status', true);
-    setMarkerToConnecting('obs_status', true);
+    if (last_teamspeak_status) setMarkerToConnecting('ts_status', true);
+    if (last_obs_status) setMarkerToConnecting('obs_status', true);
 
     await apiFetch("stop_all");
 
