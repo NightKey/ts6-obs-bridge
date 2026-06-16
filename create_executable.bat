@@ -8,15 +8,21 @@ git stash
 git fetch --all
 git reset --hard
 
-SET INPUT_TAG=%1
-SET VERSION=0.0.0-unknown
+SET "INPUT_TAG=%~1"
+SET "VERSION=0.0.0"
+SET "BRANCH=unknown"
 
-:: Rough Batch parsing logic for vX.Y.Z-Stable -> X.Y.Z
-IF NOT "%INPUT_TAG%"=="" (
-    SET tmp1=%INPUT_TAG:v=%
-    CALL SET VERSION=%%tmp1:-Stable=%%
+if "%INPUT_TAG%"=="" goto :skip_parsing
+
+SET "TMP_TAG=%INPUT_TAG:v=%"
+
+for /f "tokens=1,2 delims=-" %%A in ("%TMP_TAG%") do (
+    SET "VERSION=%%A"
+    SET "BRANCH=%%B"
 )
-echo Target version: %VERSION%
+
+:skip_parsing
+echo Target version: %VERSION%-%BRANCH%
 
 IF NOT EXIST venv\ (
     ECHO Venv doesn't exist, creating venv.
@@ -43,7 +49,8 @@ echo     "teamspeak":"INFO",>> dist\TeamSpeak-OBS-Bridge-App\data\levels
 echo     "obs":"INFO",>> dist\TeamSpeak-OBS-Bridge-App\data\levels
 echo     "main":"INFO">> dist\TeamSpeak-OBS-Bridge-App\data\levels
 echo }>> dist\TeamSpeak-OBS-Bridge-App\data\levels
-echo %VERSION% > "dist/TeamSpeak-OBS-Bridge-App/data/version"
+echo %VERSION% > "dist\TeamSpeak-OBS-Bridge-App\data\version"
+echo %BRANCH%>> "dist\TeamSpeak-OBS-Bridge-App\data\version"
 
 echo "Creating WebUI folders"
 mkdir "dist\TeamSpeak-OBS-Bridge-App\_internal\modules\WebUI\static"

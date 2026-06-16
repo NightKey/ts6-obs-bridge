@@ -1,5 +1,5 @@
 echo "Cleaning previous build"
-rm "dist/TeamSpeak-OBS-Bridge-App-Linux.tar.gz"
+rm -f "dist/TeamSpeak-OBS-Bridge-App-Linux.tar.gz"
 rm -rf "dist/TeamSpeak-OBS-Bridge-App"
 
 echo "Moving to newest state"
@@ -7,12 +7,14 @@ git stash
 git fetch --all
 git reset --hard
 
-INPUT_TAG=$1
-VERSION="0.0.0-unknown"
-if [[ $INPUT_TAG =~ v([0-9]+\.[0-9]+\.[0-9]+)-Stable ]]; then
-    VERSION="${BASH_REMATCH[1]}"
+RE="v([0-9]+\.[0-9]+\.[0-9]+)(-|)([a-zA-Z]+|)"
+VERSION=""
+BRANCH=""
+if [[ $1 =~ $RE ]]; then
+  VERSION=${BASH_REMATCH[1]}
+  BRANCH=${BASH_REMATCH[3]}
 fi
-echo "Target version: $VERSION"
+echo "Target version: $VERSION-$BRANCH"
 
 if ! [ -d venv ]
 then
@@ -20,7 +22,6 @@ then
     python3 -m virtualenv venv
 fi
 
-#If not in venv, activate venv.
 if [[ "$VIRTUAL_ENV" = "" ]]
 then
     source venv/bin/activate
@@ -44,7 +45,8 @@ cat << 'EOF' > dist/TeamSpeak-OBS-Bridge-App/data/levels
     "main":"INFO"
 }
 EOF
-echo "$VERSION" > "dist/TeamSpeak-OBS-Bridge-App/data/version"
+echo "$VERSION
+$BRANCH" > "dist/TeamSpeak-OBS-Bridge-App/data/version"
 
 echo "Creating WebUI folders"
 mkdir -p "./dist/TeamSpeak-OBS-Bridge-App/_internal/modules/WebUI"
