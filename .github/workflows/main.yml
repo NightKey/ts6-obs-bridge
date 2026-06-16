@@ -17,7 +17,7 @@ jobs:
       shell: cmd
       run: |
         dir
-        call .\create_executeable.bat ${{ github.ref_name }}
+        call .\create_executable.bat ${{ github.ref_name }}
 
     - name: Build Linux Executable inside Docker Container
       shell: cmd
