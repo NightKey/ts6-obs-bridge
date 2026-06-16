@@ -1,4 +1,3 @@
-#!/bin/bash
 echo "Cleaning previous build"
 rm -f "dist/TeamSpeak-OBS-Bridge-App-Linux.tar.gz"
 rm -rf "dist/TeamSpeak-OBS-Bridge-App"
