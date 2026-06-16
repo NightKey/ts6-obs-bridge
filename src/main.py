@@ -17,6 +17,9 @@ DATA_FOLDER = path.join(path.abspath('.'), "data")
 fp = open(path.join(DATA_FOLDER, "levels"), 'r')
 LEVELS = load(fp)
 fp.close()
+fp = open(path.join(DATA_FOLDER, 'version'), 'r')
+VERSION = fp.read()
+fp.close()
 
 class Main:
     settings: Settings
@@ -25,12 +28,14 @@ class Main:
     database: Database
     obs_connector: OBSConnector
     team_speak_6_connector: TeamSpeak6Connector
+    version: str
     stop_event: asyncio.Event = asyncio.Event()
     closed: bool = False
 
-    def __init__(self, logger: Logger):
+    def __init__(self, logger: Logger, version: str):
         loop = asyncio.new_event_loop()
         self.logger = logger
+        self.version = version
         self.database = loop.run_until_complete(
             Database.create(
                 logger=Logger(log_to_console=True, use_caller_name=True, use_file_names=True, level=LEVEL.from_string(LEVELS["database"])),
@@ -51,13 +56,15 @@ class Main:
             ts_user_map_callback=self.get_ts_user_map,
             obs_scene_map_callback=self.get_obs_scene_map,
             re_init_obs_callback=self.re_init_obs,
-            toggle_autoconnect_callback=self.toggle_autoconnect
+            toggle_autoconnect_callback=self.toggle_autoconnect,
+            version=self.version
         )
         self.obs_connector = OBSConnector(
             logger=Logger(log_to_console=True, use_caller_name=True, use_file_names=True, level=LEVEL.from_string(LEVELS["obs"]))
         )
         self.team_speak_6_connector = TeamSpeak6Connector(
             logger=Logger(log_to_console=True, use_caller_name=True, use_file_names=True, level=LEVEL.from_string(LEVELS["teamspeak"])),
+            version=self.version,
             user_status_changed_callback=self.user_state_changed,
             user_deafened_changed_callback=self.deafen_toggled
         )
@@ -201,8 +208,8 @@ class Main:
 
 if __name__=="__main__":
     main_logger = Logger(log_to_console=True, use_caller_name=True, use_file_names=True, level=LEVEL.from_string(LEVELS["main"]))
-    main_logger.info("Starting application")
-    main = Main(main_logger)
+    main_logger.info(f"Starting application version {VERSION}")
+    main = Main(main_logger, VERSION)
     main_logger.debug("Registering atexit")
     atexit.register(main.close)
     main.start()

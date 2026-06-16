@@ -40,3 +40,15 @@ jobs:
           dist/TeamSpeak-OBS-Bridge-App-Linux.tar.gz
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Host and Docker Cleanup
+      if: always()
+      shell: cmd
+      run: |
+        echo "Cleaning up local workspace build files..."
+        if exist "dist" rmdir /s /q "dist"
+        if exist "venv" rmdir /s /q "venv"
+        
+        echo "Cleaning up Docker builder cache and dangling images..."
+        docker image rm ts-obs-linux --force
+        docker system prune -f

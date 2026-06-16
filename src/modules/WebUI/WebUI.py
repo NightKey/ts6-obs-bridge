@@ -23,6 +23,7 @@ class WebUI:
     ts_user_map_callback: Callable[[], dict]
     obs_scene_map_callback: Callable[[], dict]
     re_init_obs_callback: Callable[[], Coroutine[Any, Any, None]]
+    version: str
 
 
     def __init__(
@@ -38,7 +39,8 @@ class WebUI:
             ts_user_map_callback: Callable[[], dict],
             obs_scene_map_callback: Callable[[], dict],
             toggle_autoconnect_callback: Callable[[bool], Coroutine[Any, Any, None]],
-            re_init_obs_callback: Callable[[], Coroutine[Any, Any, None]]
+            re_init_obs_callback: Callable[[], Coroutine[Any, Any, None]],
+            version: str
     ):
         self.logger = logger
         self.get_settings_callback = get_settings_callback
@@ -53,6 +55,7 @@ class WebUI:
         self.toggle_autoconnect_callback = toggle_autoconnect_callback
         self.re_init_obs_callback = re_init_obs_callback
         self.server = HTMLServer(host="127.0.0.1", port=12345, root_path=path.dirname(__file__), logger=logger, title="Stream Control Panel")
+        self.version = version
         # Main page
         self.server.add_url_rule("/", self.index)
         self.server.add_url_rule("/update_settings", self.update_settings, Protocol.Post)
@@ -76,7 +79,7 @@ class WebUI:
         self.server.serve_forever_threaded(templates=templates.__dict__, static=static.__dict__)
 
     def index(self, _) -> str:
-        return self.server.render_template_file(name="index.html", page_title="Stream Control Panel")
+        return self.server.render_template_file(name="index.html", page_title=f"Stream Control Panel v{self.version}")
 
     def teamspeak(self, _) -> str:
         return self.server.render_template_file(name="teamspeak", page_title="Team Speak connector details")

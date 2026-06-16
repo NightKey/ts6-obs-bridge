@@ -1,10 +1,18 @@
 echo "Cleaning previous build"
 rm "dist/TeamSpeak-OBS-Bridge-App-Linux.tar.gz"
 rm -rf "dist/TeamSpeak-OBS-Bridge-App"
+
 echo "Moving to newest state"
 git stash
 git fetch --all
 git reset --hard
+
+INPUT_TAG=$1
+VERSION="0.0.0-unknown"
+if [[ $INPUT_TAG =~ v([0-9]+\.[0-9]+\.[0-9]+)-Stable ]]; then
+    VERSION="${BASH_REMATCH[1]}"
+fi
+echo "Target version: $VERSION"
 
 if ! [ -d venv ]
 then
@@ -17,11 +25,14 @@ if [[ "$VIRTUAL_ENV" = "" ]]
 then
     source venv/bin/activate
 fi
+
 echo "Upgrading dependencies"
 pip install -r dependencies.txt --upgrade
 pip install pyinstaller
+
 echo "Building executable"
 pyinstaller -n "TeamSpeak-OBS-Bridge-App" -D src/main.py --paths=./modules
+
 echo "Creating levels file"
 mkdir "dist/TeamSpeak-OBS-Bridge-App/data"
 cat << 'EOF' > dist/TeamSpeak-OBS-Bridge-App/data/levels
@@ -33,11 +44,15 @@ cat << 'EOF' > dist/TeamSpeak-OBS-Bridge-App/data/levels
     "main":"INFO"
 }
 EOF
+echo "$VERSION" > "dist/TeamSpeak-OBS-Bridge-App/data/version"
+
 echo "Creating WebUI folders"
 mkdir -p "./dist/TeamSpeak-OBS-Bridge-App/_internal/modules/WebUI"
+
 echo "Copying WebUI assets"
 cp -r "src/modules/WebUI/static" "dist/TeamSpeak-OBS-Bridge-App/_internal/modules/WebUI/static"
 cp -r "src/modules/WebUI/templates" "dist/TeamSpeak-OBS-Bridge-App/_internal/modules/WebUI/templates"
+
 echo "Creating tar.gz file"
 tar -czvf "dist/TeamSpeak-OBS-Bridge-App-Linux.tar.gz" "dist/TeamSpeak-OBS-Bridge-App"
 git stash pop

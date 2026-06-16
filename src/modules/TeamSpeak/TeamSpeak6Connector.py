@@ -17,6 +17,7 @@ class TeamSpeak6Connector(BaseConnector):
     websocket: ClientConnection | None = None
     stop_event: Event = Event()
     user_status_map: Dict[int, ClientInfo] = {}
+    version: str
 
     @property
     def is_connected(self) -> bool:
@@ -33,10 +34,12 @@ class TeamSpeak6Connector(BaseConnector):
     def __init__(
             self,
             logger: Logger,
+            version: str,
             user_status_changed_callback: Callable[[str, UserStatus], Coroutine[Any, Any, None]],
             user_deafened_changed_callback: Callable[[bool], Coroutine[Any, Any, None]]
     ):
         self.__logger = logger
+        self.version = version
         self.user_status_changed_callback = user_status_changed_callback
         self.user_deafened_changed_callback = user_deafened_changed_callback
 
@@ -55,7 +58,7 @@ class TeamSpeak6Connector(BaseConnector):
             "type": "auth",
             "payload": {
                 "identifier": "TeamSpeak6-OBS-Bridge",
-                "version": "0.0.1",
+                "version": self.version,
                 "name": "TeamSpeak6 to OBS Bridge",
                 "description": "A stream helper with TeamSpeak6 and OBS Studio integration.",
                 "content": {
@@ -81,7 +84,7 @@ class TeamSpeak6Connector(BaseConnector):
             "type": "auth",
             "payload": {
                 "identifier": "TeamSpeak6-OBS-Bridge",
-                "version": "0.0.1",
+                "version": self.version,
                 "name": "TeamSpeak6 to OBS Bridge",
                 "description": "A stream helper with TeamSpeak6 and OBS Studio integration.",
                 "content": {
