@@ -2,11 +2,6 @@ echo "Cleaning previous build"
 rm -f "dist/TeamSpeak-OBS-Bridge-App-Linux.tar.gz"
 rm -rf "dist/TeamSpeak-OBS-Bridge-App"
 
-echo "Moving to newest state"
-git stash
-git fetch --all
-git reset --hard
-
 RE="v([0-9]+\.[0-9]+\.[0-9]+)(-|)([a-zA-Z]+|)"
 VERSION=""
 BRANCH=""
@@ -57,6 +52,4 @@ cp -r "src/modules/WebUI/templates" "dist/TeamSpeak-OBS-Bridge-App/_internal/mod
 
 echo "Creating tar.gz file"
 tar -czvf "dist/TeamSpeak-OBS-Bridge-App-Linux.tar.gz" "dist/TeamSpeak-OBS-Bridge-App"
-git stash pop
-git stash clear
 echo "Done"

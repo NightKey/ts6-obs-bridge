@@ -3,11 +3,6 @@ echo "Cleaning previous build"
 if exist "dist\TeamSpeak-OBS-Bridge-App" rmdir /s /q "dist\TeamSpeak-OBS-Bridge-App"
 if exist "dist\TeamSpeak-OBS-Bridge-App-Windows.zip" del "dist\TeamSpeak-OBS-Bridge-App-Windows.zip"
 
-echo "Moving to newest state"
-git stash
-git fetch --all
-git reset --hard
-
 SET "INPUT_TAG=%~1"
 SET "VERSION=0.0.0"
 SET "BRANCH=unknown"
@@ -63,7 +58,4 @@ robocopy "src\modules\WebUI\templates" "dist\TeamSpeak-OBS-Bridge-App\_internal\
 echo "Creating zip file"
 cd dist
 tar -a -cvf "TeamSpeak-OBS-Bridge-App-Windows.zip" "TeamSpeak-OBS-Bridge-App"
-
-git stash pop
-git stash clear
 echo "Done"
