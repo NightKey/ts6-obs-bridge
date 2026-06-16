@@ -31,15 +31,13 @@ pyinstaller -n "TeamSpeak-OBS-Bridge-App" -D src/main.py --paths=./modules
 
 echo "Creating levels file"
 mkdir "dist/TeamSpeak-OBS-Bridge-App/data"
-cat << 'EOF' > dist/TeamSpeak-OBS-Bridge-App/data/levels
-{
-    "database":"INFO",
-    "webui":"WARNING",
-    "teamspeak":"INFO",
-    "obs":"INFO",
-    "main":"INFO"
-}
-EOF
+echo "{
+    \"database\":\"INFO\",
+    \"webui\":\"WARNING\",
+    \"teamspeak\":\"INFO\",
+    \"obs\":\"INFO\",
+    \"main\":\"INFO\"
+}" > dist/TeamSpeak-OBS-Bridge-App/data/levels
 echo "$VERSION
 $BRANCH" > "dist/TeamSpeak-OBS-Bridge-App/data/version"
 
