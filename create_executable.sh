@@ -17,8 +17,7 @@ then
     python3 -m virtualenv venv
 fi
 
-if [[ "$VIRTUAL_ENV" = "" ]]
-then
+if [[ "$VIRTUAL_ENV" = "" ]]; then
     source venv/bin/activate
 fi
 
