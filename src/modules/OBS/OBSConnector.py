@@ -23,7 +23,6 @@ class OBSConnector(BaseConnector):
     requested_states: Dict[str, UserStatus] = {}
     stop_event: Event = Event()
     message_queue: Queue
-    watchdog_loop_task: Task | None = None
     websocket: ClientConnection | None = None
     obs_initialized_event: Event = Event()
     obs_ready: bool = False
@@ -104,11 +103,11 @@ class OBSConnector(BaseConnector):
     async def connect(self, obs_ip: str, obs_port: int, obs_password: str, obs_scene: str) -> bool:
         self.stop_event.clear()
         self.message_queue = Queue()
-        self.watchdog_loop_task = asyncio.create_task(self.watchdog_loop(), name="watchdog task")
         self.logger.info(f"Connecting to OBS on ws://{obs_ip}:{obs_port} with scene: {obs_scene}")
         self.scene = obs_scene
         self.websocket = await connect(f"ws://{obs_ip}:{obs_port}/websockets")
-        create_task(self.retrieve_loop())
+        create_task(self.retrieve_loop(), name="OBS retrieve task")
+        create_task(self.watchdog_loop(), name="OBS watchdog task")
         # Adapted from Elektordi(https://github.com/Elektordi/obs-websocket-py/blob/master/obswebsocket/core.py) , MIT License
         response = await self.get_message(OpCode.Hello)
         auth = ""
@@ -148,7 +147,7 @@ class OBSConnector(BaseConnector):
         return True
 
     def close(self) -> None:
-        if self.websocket is None: return
+        if self.stop_event.is_set(): return
         self.logger.info("Closing OBS connector")
         self.stop_event.set()
 
@@ -159,8 +158,6 @@ class OBSConnector(BaseConnector):
         self.websocket = None
         self.user_scenes.clear()
         self.obs_ready = False
-        if not self.watchdog_loop_task.done():
-            self.watchdog_loop_task.cancel()
         self.watchdog_loop_task = None
 
     @async_wrapped

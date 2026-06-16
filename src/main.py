@@ -26,6 +26,7 @@ class Main:
     obs_connector: OBSConnector
     team_speak_6_connector: TeamSpeak6Connector
     stop_event: asyncio.Event = asyncio.Event()
+    closed: bool = False
 
     def __init__(self, logger: Logger):
         loop = asyncio.new_event_loop()
@@ -175,14 +176,22 @@ class Main:
 
     def stop_all(self) -> None:
         self.stop_event.set()
+        self.logger.trace("Stop event set")
         self.obs_connector.close()
+        self.logger.trace("OBS close called")
         self.team_speak_6_connector.close()
+        self.logger.trace("TS6 close called")
 
     def close(self):
+        if self.closed: return
+        self.logger.trace("Close called")
         loop = asyncio.new_event_loop()
         self.stop_all()
         loop.run_until_complete(self.database.close())
+        self.logger.trace("Database close called")
         self.web_ui.close()
+        self.logger.trace("WebUI close called")
+        self.closed = True
 
     def get_ts_user_map(self) -> dict:
         return self.team_speak_6_connector.get_user_map()
@@ -197,4 +206,5 @@ if __name__=="__main__":
     main_logger.debug("Registering atexit")
     atexit.register(main.close)
     main.start()
+    main_logger.debug("Finished")
     show_open_calls(main_logger.trace)

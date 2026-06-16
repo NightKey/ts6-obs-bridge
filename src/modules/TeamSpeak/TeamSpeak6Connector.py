@@ -102,7 +102,7 @@ class TeamSpeak6Connector(BaseConnector):
         await self.load_clients_present(response["payload"]["connections"][0]["clientId"],  response["payload"]["connections"][0]["clientInfos"])
         self.logger.debug(f"User id: {self.user.id}")
 
-        create_task(self.retrieve_loop())
+        create_task(self.retrieve_loop(), name="TS6 retrieve task")
         return True
 
     @async_wrapped
