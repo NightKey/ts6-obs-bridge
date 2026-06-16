@@ -1,3 +1,4 @@
+#!/bin/bash
 echo "Cleaning previous build"
 rm -f "dist/TeamSpeak-OBS-Bridge-App-Linux.tar.gz"
 rm -rf "dist/TeamSpeak-OBS-Bridge-App"
@@ -17,8 +18,7 @@ then
     python3 -m virtualenv venv
 fi
 
-if [[ "$VIRTUAL_ENV" = "" ]]
-then
+if [[ "$VIRTUAL_ENV" = "" ]]; then
     source venv/bin/activate
 fi
 
