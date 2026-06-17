@@ -16,6 +16,11 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v4
 
+    - name: Windows Build check
+      shell: cmd
+      run: |
+        call .\run_tests.bat
+
     - name: Build Windows Executable
       shell: cmd
       run: |

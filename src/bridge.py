@@ -13,15 +13,7 @@ from smdb_logger import Logger, LEVEL
 from modules import Settings, UserStatus, WebUI, Database, OBSConnector, TeamSpeak6Connector, OBSException, \
     TeamSpeakException, show_open_calls
 
-DATA_FOLDER = path.join(path.abspath('.'), "data")
-fp = open(path.join(DATA_FOLDER, "levels"), 'r')
-LEVELS = load(fp)
-fp.close()
-fp = open(path.join(DATA_FOLDER, 'version'), 'r')
-VERSION = fp.read()
-fp.close()
-
-class Main:
+class Bridge:
     settings: Settings
     logger: Logger
     web_ui: WebUI
@@ -207,9 +199,17 @@ class Main:
         return self.obs_connector.get_scene_map()
 
 if __name__=="__main__":
+    DATA_FOLDER = path.join(path.abspath('.'), "data")
+    fp = open(path.join(DATA_FOLDER, "levels"), 'r')
+    LEVELS = load(fp)
+    fp.close()
+    fp = open(path.join(DATA_FOLDER, 'version'), 'r')
+    VERSION = fp.read()
+    fp.close()
+
     main_logger = Logger(log_to_console=True, use_caller_name=True, use_file_names=True, level=LEVEL.from_string(LEVELS["main"]))
     main_logger.info(f"Starting application version {VERSION}")
-    main = Main(main_logger, VERSION)
+    main = Bridge(main_logger, VERSION)
     main_logger.debug("Registering atexit")
     atexit.register(main.close)
     main.start()
