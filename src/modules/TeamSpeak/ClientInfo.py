@@ -24,7 +24,7 @@ class ClientInfo:
             channel_id=data["channelId"] if "channelId" in data else None
         )
 
-    def merge(self, other: ClientInfo) -> ClientInfo:
+    def merge(self, other: ClientInfo) -> 'ClientInfo':
         return ClientInfo(
             id=self.id,
             name=other.name if other.name else self.name,
@@ -35,7 +35,7 @@ class ClientInfo:
             channel_id=other.channel_id if other.channel_id is not None else self.channel_id
         )
 
-    def with_new_channel(self, channel_id: int) -> ClientInfo:
+    def with_new_channel(self, channel_id: int) -> 'ClientInfo':
         return ClientInfo(
             id=self.id,
             name=self.name,
