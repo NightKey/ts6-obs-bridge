@@ -9,4 +9,4 @@ IF "%VIRTUAL_ENV%"=="" (
 
 echo "Upgrading dependencies"
 call python -m pip install -r dependencies.txt --upgrade
-call python test\main.py
+call python -m test.main

@@ -1,1 +1,1 @@
-from src import Bridge
+from src.bridge import Bridge
