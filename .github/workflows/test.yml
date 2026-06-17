@@ -1,0 +1,48 @@
+name: Build Cross-Platform Releases
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+-Test'
+
+jobs:
+  compile-and-publish:
+    runs-on: self-hosted
+
+    permissions:
+      contents: write
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Windows Build check
+      shell: cmd
+      run: |
+        call .\run_tests.bat
+
+    - name: Build Windows Executable
+      shell: cmd
+      run: |
+        call .\create_executable.bat ${{ github.ref_name }}
+
+    - name: Build Linux Executable
+      shell: cmd
+      run: |
+        docker build --build-arg TAG=${{ github.ref_name }} -t ts-obs-linux -f docker .
+        docker create --name temp_linux ts-obs-linux
+        if not exist dist mkdir dist
+        docker cp temp_linux:/app/dist/TeamSpeak-OBS-Bridge-App-Linux.tar.gz ./dist/TeamSpeak-OBS-Bridge-App-Linux.tar.gz
+        docker rm temp_linux
+
+    - name: Cleanup
+      if: always()
+      shell: cmd
+      run: |
+        echo "Cleaning up local workspace build files..."
+        if exist "dist" rmdir /s /q "dist"
+        if exist "venv" rmdir /s /q "venv"
+        
+        echo "Cleaning up Docker builder cache and dangling images..."
+        docker image rm ts-obs-linux --force
+        docker system prune -f
