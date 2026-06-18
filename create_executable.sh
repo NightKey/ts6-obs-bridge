@@ -1,3 +1,4 @@
+set -e
 echo "Cleaning previous build"
 rm -f "dist/TeamSpeak-OBS-Bridge-App-Linux.tar.gz"
 rm -rf "dist/TeamSpeak-OBS-Bridge-App"
@@ -27,7 +28,7 @@ pip install -r dependencies.txt --upgrade
 pip install pyinstaller
 
 echo "Building executable"
-pyinstaller -n "TeamSpeak-OBS-Bridge-App" -D src/main.py --paths=./modules
+pyinstaller -n "TeamSpeak-OBS-Bridge-App" -D src/bridge.py --paths=./modules
 
 echo "Creating levels file"
 mkdir "dist/TeamSpeak-OBS-Bridge-App/data"
@@ -36,7 +37,7 @@ echo "{
     \"webui\":\"WARNING\",
     \"teamspeak\":\"INFO\",
     \"obs\":\"INFO\",
-    \"main\":\"INFO\"
+    \"bridge\":\"INFO\"
 }" > dist/TeamSpeak-OBS-Bridge-App/data/levels
 echo "$VERSION
 $BRANCH" > "dist/TeamSpeak-OBS-Bridge-App/data/version"
