@@ -52,8 +52,8 @@ mkdir "dist\TeamSpeak-OBS-Bridge-App\_internal\modules\WebUI\static" || exit /b 
 mkdir "dist\TeamSpeak-OBS-Bridge-App\_internal\modules\WebUI\templates" || exit /b 1
 
 echo "Copying WebUI assets"
-robocopy "src\modules\WebUI\static" "dist\TeamSpeak-OBS-Bridge-App\_internal\modules\WebUI\static" /e /copy:DAT /r:0 || exit /b 1
-robocopy "src\modules\WebUI\templates" "dist\TeamSpeak-OBS-Bridge-App\_internal\modules\WebUI\templates" /e /copy:DAT /r:0 || exit /b 1
+robocopy "src\modules\WebUI\static" "dist\TeamSpeak-OBS-Bridge-App\_internal\modules\WebUI\static" /e /copy:DAT /r:0
+robocopy "src\modules\WebUI\templates" "dist\TeamSpeak-OBS-Bridge-App\_internal\modules\WebUI\templates" /e /copy:DAT /r:0
 
 echo "Creating zip file"
 cd dist
