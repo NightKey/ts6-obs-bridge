@@ -12,15 +12,11 @@ if [[ $1 =~ $RE ]]; then
 fi
 echo "Target version: $VERSION-$BRANCH"
 
-if ! [ -d venv ]
-then
+if [[ "$VIRTUAL_ENV" = "" ]]; then
   echo "venv doesn't exist, creating venv."
   python3 -m virtualenv venv
-fi
-
-if [[ "$VIRTUAL_ENV" = "" ]]; then
   echo "Starting venv"
-  source ./venv/bin/activate
+  source venv/bin/activate
 fi
 
 echo "Upgrading dependencies"
