@@ -12,13 +12,6 @@ if [[ $1 =~ $RE ]]; then
 fi
 echo "Target version: $VERSION-$BRANCH"
 
-if [[ "$VIRTUAL_ENV" = "" ]]; then
-  echo "venv doesn't exist, creating venv."
-  python3 -m virtualenv venv
-  echo "Starting venv"
-  source venv/bin/activate
-fi
-
 echo "Upgrading dependencies"
 pip install -r dependencies.txt --upgrade
 pip install pyinstaller
