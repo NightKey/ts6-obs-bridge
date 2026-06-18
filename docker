@@ -5,4 +5,4 @@ WORKDIR /app
 COPY . .
 # Execute the shell script passing the version tag provided by the build argument
 ARG TAG
-RUN python test.main && dos2unix create_executable.sh && chmod +x create_executable.sh && bash create_executable.sh ${TAG}
+RUN python test/main.py && dos2unix create_executable.sh && chmod +x create_executable.sh && bash create_executable.sh ${TAG}
