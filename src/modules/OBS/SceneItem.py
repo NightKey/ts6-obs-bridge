@@ -11,7 +11,7 @@ class SceneItem:
     enabled: bool
     sub_items: List['SceneItem'] = field(default_factory=list)
 
-    def get_sub_item(self, item_name: str) -> SceneItem | None:
+    def get_sub_item(self, item_name: str) -> 'SceneItem | None':
         for item in self.sub_items:
             if item.itemName == item_name:
                 return item
