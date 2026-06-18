@@ -7,3 +7,5 @@ sys.path.append(str(path.join(root_dir, "src")))
 
 
 from bridge import Bridge
+
+print("[SANITY TEST] Done")
