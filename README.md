@@ -19,6 +19,12 @@ When enabled, the two connect buttons will be swapped to a "connect all" button.
 
 In this mode, the application will try to reconnect every 5 seconds when a connection is dropped.
 
+## WebUI Settings
+This page allows you to change the host and port of the web UI. When clicking on Update, the UI will restart, and after 2 seconds,
+you will be redirected to the new page.
+
+![webui_settings](resources/webui_settings.png)
+
 ## Team Speak
 > [!CAUTION]
 > For the use, you need to connect to the server you want to use for the stream on Team Speak before connecting the application to it.

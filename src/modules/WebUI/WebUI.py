@@ -23,6 +23,7 @@ class WebUI:
     ts_user_map_callback: Callable[[], dict]
     obs_scene_map_callback: Callable[[], dict]
     re_init_obs_callback: Callable[[], Coroutine[Any, Any, None]]
+    change_webui_settings_callback: Callable[[str, int], Coroutine[Any, Any, None]]
     version: str
 
 
@@ -40,7 +41,10 @@ class WebUI:
             obs_scene_map_callback: Callable[[], dict],
             toggle_autoconnect_callback: Callable[[bool], Coroutine[Any, Any, None]],
             re_init_obs_callback: Callable[[], Coroutine[Any, Any, None]],
-            version: str
+            change_webui_settings_callback: Callable[[str, int], Coroutine[Any, Any, None]],
+            version: str,
+            host: str,
+            port: int
     ):
         self.logger = logger
         self.get_settings_callback = get_settings_callback
@@ -54,7 +58,8 @@ class WebUI:
         self.obs_scene_map_callback = obs_scene_map_callback
         self.toggle_autoconnect_callback = toggle_autoconnect_callback
         self.re_init_obs_callback = re_init_obs_callback
-        self.server = HTMLServer(host="127.0.0.1", port=12345, root_path=path.dirname(__file__), logger=logger, title="Stream Control Panel")
+        self.change_webui_settings_callback = change_webui_settings_callback
+        self.server = HTMLServer(host=host, port=port, root_path=path.dirname(__file__), logger=logger, title="Stream Control Panel")
         self.version = version
         # Main page
         self.server.add_url_rule("/", self.index)
@@ -73,6 +78,9 @@ class WebUI:
         self.server.add_url_rule("/obs", self.obs)
         self.server.add_url_rule("/get_obs_scenes", self.obs_scene_map)
         self.server.add_url_rule("/reinit_obs", self.re_init_obs, Protocol.Post)
+        # WebUI
+        self.server.add_url_rule("/webui", self.webui)
+        self.server.add_url_rule("/change_webui", self.save_webui, Protocol.Post)
 
 
     def start(self) -> None:
@@ -82,10 +90,13 @@ class WebUI:
         return self.server.render_template_file(name="index.html", page_title=f"Stream Control Panel v{self.version}")
 
     def teamspeak(self, _) -> str:
-        return self.server.render_template_file(name="teamspeak", page_title="Team Speak connector details")
+        return self.server.render_static_file("teamspeak")
 
     def obs(self, _) -> str:
-        return self.server.render_template_file(name="obs", page_title="OBS Scene Monitor")
+        return self.server.render_static_file("obs")
+
+    def webui(self, _) -> str:
+        return self.server.render_static_file("webui")
 
     def ts_user_map(self, _) -> str:
         return dumps(self.ts_user_map_callback())
@@ -133,6 +144,11 @@ class WebUI:
 
     async def re_init_obs(self, _: UrlData) -> str:
         await self.re_init_obs_callback()
+        return "{}"
+
+    async def save_webui(self, url_data: UrlData) -> str:
+        data = loads(url_data.data.decode())
+        await self.change_webui_settings_callback(data["host"], data["port"])
         return "{}"
 
     def close(self):

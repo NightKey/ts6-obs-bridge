@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebUI Configuration</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+    <div class="dashboard-container">
+        <header class="dashboard-header">
+            <h1>WebUI Configuration</h1>
+            <p class="subtitle">Update the host and port settings for your interface redirection.</p>
+        </header>
+
+        <main class="config-section">
+            <div class="section-title-container">
+                <div class="section-title">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                    <h2>Connection Settings</h2>
+                </div>
+            </div>
+
+            <form id="webui-form" class="form-grid">
+                <div class="form-group">
+                    <label for="host">Host</label>
+                    <input type="text" id="host" class="form-input" placeholder="e.g., localhost or 127.0.0.1" required value="localhost">
+                </div>
+
+                <div class="form-group">
+                    <label for="port">Port</label>
+                    <input type="number" id="port" class="form-input" placeholder="e.g., 8080" required value="8080">
+                </div>
+            </form>
+        </main>
+
+        <footer class="action-footer">
+            <div class="primary-actions">
+                <button type="button" id="submit-btn" class="btn btn-primary">Update</button>
+            </div>
+        </footer>
+    </div>
+    <div id="errorPopup" class="error-popup-container">
+        <div class="error-popup-content">
+            <div class="error-popup-header">
+                <svg class="error-icon" viewBox="0 0 24 24" width="20" height="20">
+                    <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                </svg>
+                <div class="error-icon-title">
+                    <h3 id="errorPopupTitle">Error</h3>
+                </div>
+                <button type="button" id="btnCloseError" class="error-close-btn" aria-label="Close warning">&times;</button>
+            </div>
+            <div class="error-popup-body">
+                <p id="errorMessage">An unexpected error occurred while communicating with the server.</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/webui_script.js"></script>
+</body>
+</html>

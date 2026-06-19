@@ -61,6 +61,7 @@ body {
     margin-bottom: 0.5rem;
     border-bottom: 1px solid var(--border-subtle);
     padding-bottom: 0.5rem;
+    position: relative;
 }
 
 .dashboard-header h1 {
@@ -69,6 +70,12 @@ body {
     font-weight: 700;
     letter-spacing: -0.03em;
     margin-bottom: 0.5rem;
+}
+
+.dashboard-header #webui-settings {
+    position: absolute;
+    top: 0;
+    right: 0;
 }
 
 .dashboard-header .subtitle {
@@ -669,4 +676,18 @@ input:checked + .slider:before {
     animation: modern-pulse 0.5s ease infinite;
     opacity: 0.6;
     pointer-events: none;
+}
+
+/* ==========================================================================
+   8. ADDITIONAL REDIRECTION FORM ADJUSTMENTS
+   ========================================================================== */
+@media (max-width: 600px) {
+    body {
+        padding: 1rem;
+        overflow-y: auto; /* Gracefully allow scrolling if fields pile vertically */
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
 }

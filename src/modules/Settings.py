@@ -12,6 +12,8 @@ class Settings:
     obs_password: str
     obs_scene: str
     autoconnect: bool
+    host: str
+    port: int
 
     @staticmethod
     def from_json(json: Dict[str, Any]) -> 'Settings':
@@ -23,7 +25,9 @@ class Settings:
             obs_port = json["obs_port"],
             obs_password = json["obs_password"],
             obs_scene = json["obs_scene"],
-            autoconnect= bool(json.get("autoconnect", 0))
+            autoconnect= bool(json.get("autoconnect", 0)),
+            host=json.get("host", "127.0.0.1"),
+            port=json.get("port", 12345)
         )
 
     def to_json(self) -> Dict[str, Any]:
@@ -35,7 +39,9 @@ class Settings:
             "obs_port" : self.obs_port,
             "obs_password" : self.obs_password,
             "obs_scene" : self.obs_scene,
-            "autoconnect" : self.autoconnect
+            "autoconnect" : self.autoconnect,
+            "host": self.host,
+            "port": self.port
         }
 
     def which_changed(self, other: 'Settings') -> Tuple[bool, bool]:
@@ -50,4 +56,4 @@ class Settings:
         )
 
     def __str__(self) -> str:
-        return f"Settings[teamspeak_ip: {self.teamspeak_ip} teamspeak_port: {self.teamspeak_port} teamspeak_api: {self.teamspeak_api} obs_ip: {self.obs_ip} obs_port: {self.obs_port} obs_password: {self.obs_password} obs_scene: {self.obs_scene} autoconnect: {self.autoconnect}]"
+        return f"Settings[teamspeak_ip: {self.teamspeak_ip} teamspeak_port: {self.teamspeak_port} teamspeak_api: {self.teamspeak_api} obs_ip: {self.obs_ip} obs_port: {self.obs_port} obs_password: {self.obs_password} obs_scene: {self.obs_scene} autoconnect: {self.autoconnect}, host: {self.host}, port: {self.port}]"

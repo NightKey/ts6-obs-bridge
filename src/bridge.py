@@ -31,11 +31,23 @@ class Bridge:
         self.database = loop.run_until_complete(
             Database.create(
                 logger=Logger(log_to_console=True, use_caller_name=True, use_file_names=True, level=LEVEL.from_string(LEVELS["database"])),
-                data_path=DATA_FOLDER,
-                version=Version(0, 0, 2)
+                data_path=DATA_FOLDER
             )
         )
         self.settings = loop.run_until_complete(self.database.get_settings())
+        self.init_webui()
+        self.obs_connector = OBSConnector(
+            logger=Logger(log_to_console=True, use_caller_name=True, use_file_names=True, level=LEVEL.from_string(LEVELS["obs"]))
+        )
+        self.team_speak_6_connector = TeamSpeak6Connector(
+            logger=Logger(log_to_console=True, use_caller_name=True, use_file_names=True, level=LEVEL.from_string(LEVELS["teamspeak"])),
+            version=self.version,
+            user_status_changed_callback=self.user_state_changed,
+            user_deafened_changed_callback=self.deafen_toggled
+        )
+
+    def init_webui(self) ->  None:
+        self.logger.trace("Initializing webui")
         self.web_ui = WebUI(
             logger=Logger(log_to_console=True, use_caller_name=True, use_file_names=True, level=LEVEL.from_string(LEVELS["webui"])),
             get_settings_callback=self.get_settings,
@@ -49,17 +61,26 @@ class Bridge:
             obs_scene_map_callback=self.get_obs_scene_map,
             re_init_obs_callback=self.re_init_obs,
             toggle_autoconnect_callback=self.toggle_autoconnect,
-            version=self.version
-        )
-        self.obs_connector = OBSConnector(
-            logger=Logger(log_to_console=True, use_caller_name=True, use_file_names=True, level=LEVEL.from_string(LEVELS["obs"]))
-        )
-        self.team_speak_6_connector = TeamSpeak6Connector(
-            logger=Logger(log_to_console=True, use_caller_name=True, use_file_names=True, level=LEVEL.from_string(LEVELS["teamspeak"])),
+            change_webui_settings_callback=self.change_webui_settings,
             version=self.version,
-            user_status_changed_callback=self.user_state_changed,
-            user_deafened_changed_callback=self.deafen_toggled
+            host=self.settings.host,
+            port=self.settings.port
         )
+
+    async def change_webui_settings(self, host: str, port: int) -> None:
+        self.logger.info(f"Changed webui settings to {host}:{port}")
+        self.settings.host = host
+        self.settings.port = port
+        self.logger.debug("Updating settings")
+        await self.update_settings(self.settings)
+        self.logger.trace("Creating delayed restart task")
+        Thread(target=self.delayed_UI_restart, name="Delayed UI restart").start()
+
+    def delayed_UI_restart(self) -> None:
+        self.web_ui.close()
+        time.sleep(1)
+        self.init_webui()
+        self.web_ui.start()
 
     def connect_all(self) -> None:
         if self.stop_event.is_set():
@@ -104,7 +125,7 @@ class Bridge:
         self.logger.trace(f"Current settings: {self.settings}")
         if self.settings and self.settings.autoconnect:
             Thread(target=self.autoconnect, name="Auto connect loop").start()
-        self.logger.info("Serving webUI at http://127.0.0.1:12345")
+        self.logger.info(f"Serving webUI at http://{self.settings.host}:{self.settings.port}")
         self.web_ui.start()
         show_open_calls(self.logger.trace)
         while True:
