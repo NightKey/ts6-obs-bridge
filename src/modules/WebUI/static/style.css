@@ -43,6 +43,7 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
+    overflow: hidden;
 }
 
 /* Dashboard Container Block */
@@ -52,7 +53,7 @@ body {
     background-color: rgba(90, 101, 133, 0.08);
     border: 1px solid var(--border-subtle);
     border-radius: 16px;
-    padding: 2rem;
+    padding: 1.5rem;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
 }
 
@@ -73,6 +74,18 @@ body {
 .dashboard-header .subtitle {
     color: var(--text-muted);
     font-size: 1rem;
+}
+
+.dashboard-header .attributions {
+    font-size: 0.8rem;
+}
+
+a {
+    color: var(--color-sec-light);
+}
+
+a:visited {
+    color: var(--color-sec-dark);
 }
 
 /* Sections Inside Form */
@@ -107,13 +120,15 @@ body {
 }
 
 .icon {
+    width: 24px;
+    height: 24px;
     color: var(--color-sec-light);
 }
 
 /* Form Layout Grids */
 .form-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 1.25rem;
     margin-bottom: 0.5rem;
 }
@@ -172,6 +187,11 @@ label {
     padding: 4px 10px;
     border-radius: 20px;
     background-color: rgba(0, 0, 0, 0.2);
+}
+
+.status-marker:hover {
+    background-color: rgba(0, 0, 0, 0.5);
+    cursor: context-menu;
 }
 
 .status-dot {
