@@ -111,8 +111,7 @@ class Bridge:
         return await  self.obs_connector.connect(
             obs_ip=self.settings.obs_ip,
             obs_port=self.settings.obs_port,
-            obs_password=self.settings.obs_password,
-            obs_scene=self.settings.obs_scene
+            obs_password=self.settings.obs_password
         )
 
     async def re_init_obs(self) -> None:

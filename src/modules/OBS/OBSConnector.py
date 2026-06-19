@@ -18,7 +18,6 @@ from .. import UserStatus, BaseConnector, async_wrapped
 
 class OBSConnector(BaseConnector):
     __logger: Logger
-    scene: str
     user_scenes: Dict[str, SceneItem] = {}
     requested_states: Dict[str, UserStatus] = {}
     stop_event: Event = Event()
@@ -100,11 +99,10 @@ class OBSConnector(BaseConnector):
         return response
 
     @async_wrapped
-    async def connect(self, obs_ip: str, obs_port: int, obs_password: str, obs_scene: str) -> bool:
+    async def connect(self, obs_ip: str, obs_port: int, obs_password: str) -> bool:
         self.stop_event.clear()
         self.message_queue = Queue()
-        self.logger.info(f"Connecting to OBS on ws://{obs_ip}:{obs_port} with scene: {obs_scene}")
-        self.scene = obs_scene
+        self.logger.info(f"Connecting to OBS on ws://{obs_ip}:{obs_port}")
         self.websocket = await connect(f"ws://{obs_ip}:{obs_port}/websockets")
         create_task(self.retrieve_loop(), name="OBS retrieve task")
         create_task(self.watchdog_loop(), name="OBS watchdog task")

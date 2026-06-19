@@ -6,7 +6,7 @@ from . import Settings
 class Database(DBManager):
     @property
     def current_version(self) -> Version:
-        return Version(0, 0, 3)
+        return Version(0, 0, 4)
 
     @DBManager.async_database_safe
     @DBManager.async_during_init
@@ -21,7 +21,7 @@ class Database(DBManager):
                 )
                 await self.db.commit()
                 version = Version(0, 0, 2)
-            elif version == Version(0, 0, 2):
+            if version == Version(0, 0, 2):
                 await self.db.execute(
                     """ALTER TABLE settings ADD COLUMN host TEXT DEFAULT '127.0.0.1';"""
                 )
@@ -30,6 +30,12 @@ class Database(DBManager):
                 )
                 await self.db.commit()
                 version = Version(0, 0, 3)
+            if version == Version(0, 0, 3):
+                await self.db.execute(
+                    """ALTER TABLE settings DROP COLUMN obs_scene"""
+                )
+                await self.db.commit()
+                version = Version(0, 0, 4)
         return True
 
     @DBManager.async_database_safe
@@ -46,7 +52,6 @@ class Database(DBManager):
                 obs_ip TEXT NOT NULL UNIQUE,
                 obs_port INTEGER NOT NULL,
                 obs_password TEXT NOT NULL,
-                obs_scene TEXT NOT NULL,
                 autoconnect INTEGER DEFAULT 0,
                 host TEXT DEFAULT '127.0.0.1',
                 port INTEGER DEFAULT 12345
@@ -60,7 +65,7 @@ class Database(DBManager):
     @DBManager.async_timed
     async def get_settings(self) -> Settings | None:
         result = await self.db.execute_fetchall(
-            f"""SELECT teamspeak_ip, teamspeak_port, teamspeak_api, obs_ip, obs_port, obs_password, obs_scene, autoconnect, host, port FROM settings"""
+            f"""SELECT teamspeak_ip, teamspeak_port, teamspeak_api, obs_ip, obs_port, obs_password, autoconnect, host, port FROM settings"""
         )
         if len(result) == 0: return None
         return Settings(
@@ -70,18 +75,17 @@ class Database(DBManager):
             obs_ip=result[0][3],
             obs_port=result[0][4],
             obs_password=result[0][5],
-            obs_scene=result[0][6],
-            autoconnect=result[0][7],
-            host=result[0][8],
-            port=result[0][9]
+            autoconnect=result[0][6],
+            host=result[0][7],
+            port=result[0][8]
         )
 
     @DBManager.async_database_safe
     @DBManager.async_timed
     async def upsert_settings(self, settings: Settings) -> bool:
         await self.db.execute(
-            f"""INSERT OR REPLACE INTO settings (teamspeak_ip, teamspeak_port, teamspeak_api, obs_ip, obs_port, obs_password, obs_scene, autoconnect, host, port)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            f"""INSERT OR REPLACE INTO settings (teamspeak_ip, teamspeak_port, teamspeak_api, obs_ip, obs_port, obs_password, autoconnect, host, port)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 settings.teamspeak_ip,
@@ -90,7 +94,6 @@ class Database(DBManager):
                 settings.obs_ip,
                 settings.obs_port,
                 settings.obs_password,
-                settings.obs_scene,
                 settings.autoconnect,
                 settings.host,
                 settings.port

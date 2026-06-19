@@ -53,7 +53,7 @@ async function loadSettings() {
 
     const fields = [
         'teamspeak_ip', 'teamspeak_port', 'teamspeak_api',
-        'obs_ip', 'obs_port', 'obs_password', 'obs_scene'
+        'obs_ip', 'obs_port', 'obs_password'
     ];
 
     fields.forEach(fieldId => {
@@ -81,11 +81,9 @@ async function saveSettings() {
     const payload = {
         teamspeak_ip: document.getElementById('teamspeak_ip').value || document.getElementById('teamspeak_ip').placeholder,
         teamspeak_port: parseInt(document.getElementById('teamspeak_port').value || document.getElementById('teamspeak_port').placeholder, 10),
-        teamspeak_api: document.getElementById('teamspeak_api').value,
         obs_ip: document.getElementById('obs_ip').value || document.getElementById('obs_ip').placeholder,
         obs_port: parseInt(document.getElementById('obs_port').value || document.getElementById('obs_port').placeholder, 10),
         obs_password: document.getElementById('obs_password').value,
-        obs_scene: document.getElementById('obs_scene').value,
         autoconnect: document.getElementById('autoconnect').checked
     };
 

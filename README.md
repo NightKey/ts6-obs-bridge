@@ -9,7 +9,7 @@ When started, a web UI will be hosted on http://127.0.0.1:12345.
 
 ![main_page](resources/main_page.png)
 
-If the ports and IPs are correct, you just need to fill in the password and the scene name for OBS.
+If the ports and IPs are correct, you just need to fill in the password for OBS.
 
 ## Auto-connect
 With the auto-connect toggle, you can enable the autoconnection to the setup OBS and Team Speak websocket.
