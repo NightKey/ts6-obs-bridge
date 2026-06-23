@@ -184,6 +184,7 @@ class TeamSpeak6Connector(BaseConnector):
     @async_wrapped
     async def talking_status_changed(self, message: dict) -> None:
         self.logger.debug("Processing talkStatusChanged message")
+        self.logger.trace(str(message))
         talker_id = message["clientId"]
         is_talking = message["status"] == 1
         if talker_id == self.user.id:
@@ -194,7 +195,7 @@ class TeamSpeak6Connector(BaseConnector):
             self.logger.debug(f"Ignoring state change for {old_info.name} from Left")
             return
         current_status = self.evaluate_client_info(old_info)
-        if current_status.name == UserStatus.Left.name: return
+        if not current_status or current_status.name == UserStatus.Left.name: return
         new_status = UserStatus.Speaking if is_talking else UserStatus.Quiet
         if current_status.name == UserStatus.Muted.name and new_status.name == UserStatus.Quiet.name: return
         self.logger.trace(f"talkStatusChanged: Calling user_state_changed for user {old_info.name} old status {current_status} mew status {new_status}")

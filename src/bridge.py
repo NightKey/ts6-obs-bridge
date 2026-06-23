@@ -7,7 +7,6 @@ from os import path
 import time
 import atexit
 
-from smdb_db_manager import Version
 from smdb_logger import Logger, LEVEL
 
 from modules import Settings, UserStatus, WebUI, Database, OBSConnector, TeamSpeak6Connector, OBSException, \
@@ -30,17 +29,44 @@ class Bridge:
         self.version = version
         self.database = loop.run_until_complete(
             Database.create(
-                logger=Logger(log_to_console=True, use_caller_name=True, use_file_names=True, level=LEVEL.from_string(LEVELS["database"])),
+                logger=Logger(
+                    log_to_console=True,
+                    use_caller_name=True,
+                    use_file_names=True,
+                    level=LEVEL.from_string(LEVELS["database"]["level"]),
+                    log_file_name="database" if LEVELS["database"]["create_file"] else None,
+                    log_folder=LOG_FOLDER,
+                    level_only_valid_for_console=True,
+                    max_logfile_lifetime=2
+                ),
                 data_path=DATA_FOLDER
             )
         )
         self.settings = loop.run_until_complete(self.database.get_settings())
         self.init_webui()
         self.obs_connector = OBSConnector(
-            logger=Logger(log_to_console=True, use_caller_name=True, use_file_names=True, level=LEVEL.from_string(LEVELS["obs"]))
+            logger=Logger(
+                log_to_console=True,
+                use_caller_name=True,
+                use_file_names=True,
+                level=LEVEL.from_string(LEVELS["obs"]["level"]),
+                log_file_name="obs" if LEVELS["obs"]["create_file"] else None,
+                log_folder=LOG_FOLDER,
+                level_only_valid_for_console=True,
+                max_logfile_lifetime=2
+            )
         )
         self.team_speak_6_connector = TeamSpeak6Connector(
-            logger=Logger(log_to_console=True, use_caller_name=True, use_file_names=True, level=LEVEL.from_string(LEVELS["teamspeak"])),
+            logger=Logger(
+                log_to_console=True,
+                use_caller_name=True,
+                use_file_names=True,
+                level=LEVEL.from_string(LEVELS["teamspeak"]["level"]),
+                log_file_name="teamspeak" if LEVELS["teamspeak"]["create_file"] else None,
+                log_folder=LOG_FOLDER,
+                level_only_valid_for_console=True,
+                max_logfile_lifetime=2
+            ),
             version=self.version,
             user_status_changed_callback=self.user_state_changed,
             user_deafened_changed_callback=self.deafen_toggled
@@ -49,7 +75,16 @@ class Bridge:
     def init_webui(self) ->  None:
         self.logger.trace("Initializing webui")
         self.web_ui = WebUI(
-            logger=Logger(log_to_console=True, use_caller_name=True, use_file_names=True, level=LEVEL.from_string(LEVELS["webui"])),
+            logger=Logger(
+                log_to_console=True,
+                use_caller_name=True,
+                use_file_names=True,
+                level=LEVEL.from_string(LEVELS["webui"]["level"]),
+                log_file_name="webui" if LEVELS["webui"]["create_file"] else None,
+                log_folder=LOG_FOLDER,
+                level_only_valid_for_console=True,
+                max_logfile_lifetime=2
+            ),
             get_settings_callback=self.get_settings,
             update_settings_callback=self.update_settings,
             get_state_callback=self.get_state,
@@ -220,15 +255,25 @@ class Bridge:
 
 if __name__=="__main__":
     DATA_FOLDER = path.join(path.abspath('.'), "data")
-    fp = open(path.join(DATA_FOLDER, "levels"), 'r')
+    LOG_FOLDER = path.join(DATA_FOLDER, "logs")
+    fp = open(path.join(DATA_FOLDER, "log_settings"), 'r')
     LEVELS = load(fp)
     fp.close()
     fp = open(path.join(DATA_FOLDER, 'version'), 'r')
     VERSION = fp.read()
     fp.close()
 
-    bridge_logger = Logger(log_to_console=True, use_caller_name=True, use_file_names=True, level=LEVEL.from_string(LEVELS["bridge"]))
-    bridge_logger.info(f"Starting application version {VERSION}")
+    bridge_logger = Logger(
+        log_to_console=True,
+        use_caller_name=True,
+        use_file_names=True,
+        level=LEVEL.from_string(LEVELS["bridge"]["level"]),
+        log_file_name="bridge" if LEVELS["bridge"]["create_file"] else None,
+        log_folder=LOG_FOLDER,
+        level_only_valid_for_console=True,
+        max_logfile_lifetime=2
+    )
+    bridge_logger.info(f"Starting application version {'-'.join(VERSION.split('\n'))}")
     bridge = Bridge(bridge_logger, VERSION)
     bridge_logger.debug("Registering atexit")
     atexit.register(bridge.close)

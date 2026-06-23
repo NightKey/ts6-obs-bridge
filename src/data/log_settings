@@ -1,0 +1,22 @@
+{
+    "database": {
+        "level": "INFO",
+        "create_file": false
+    },
+    "webui": {
+        "level": "WARNING",
+        "create_file": false
+    },
+    "teamspeak": {
+        "level": "INFO",
+        "create_file": false
+    },
+    "obs": {
+        "level": "INFO",
+        "create_file": false
+    },
+    "bridge": {
+        "level": "INFO",
+        "create_file": false
+    }
+}

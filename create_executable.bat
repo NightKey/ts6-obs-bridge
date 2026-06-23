@@ -37,13 +37,28 @@ pyinstaller -n "TeamSpeak-OBS-Bridge-App" -D src\bridge.py --paths=.\modules || 
 
 echo "Creating levels file"
 mkdir "dist\TeamSpeak-OBS-Bridge-App\data" || exit /b 1
-echo {> dist\TeamSpeak-OBS-Bridge-App\data\levels || exit /b 1
-echo     "database":"INFO",>> dist\TeamSpeak-OBS-Bridge-App\data\levels || exit /b 1
-echo     "webui":"WARNING",>> dist\TeamSpeak-OBS-Bridge-App\data\levels || exit /b 1
-echo     "teamspeak":"INFO",>> dist\TeamSpeak-OBS-Bridge-App\data\levels || exit /b 1
-echo     "obs":"INFO",>> dist\TeamSpeak-OBS-Bridge-App\data\levels || exit /b 1
-echo     "bridge":"INFO">> dist\TeamSpeak-OBS-Bridge-App\data\levels || exit /b 1
-echo }>> dist\TeamSpeak-OBS-Bridge-App\data\levels || exit /b 1
+echo { > dist\TeamSpeak-OBS-Bridge-App\data\levels || exit /b 1
+echo     "database": { >> dist\TeamSpeak-OBS-Bridge-App\data\levels || exit /b 1
+echo         "level": "INFO", >> dist\TeamSpeak-OBS-Bridge-App\data\levels || exit /b 1
+echo         "create_file": false >> dist\TeamSpeak-OBS-Bridge-App\data\levels || exit /b 1
+echo     }, >> dist\TeamSpeak-OBS-Bridge-App\data\levels || exit /b 1
+echo     "webui": { >> dist\TeamSpeak-OBS-Bridge-App\data\levels || exit /b 1
+echo         "level": "WARNING", >> dist\TeamSpeak-OBS-Bridge-App\data\levels || exit /b 1
+echo         "create_file": false >> dist\TeamSpeak-OBS-Bridge-App\data\levels || exit /b 1
+echo     }, >> dist\TeamSpeak-OBS-Bridge-App\data\levels || exit /b 1
+echo     "teamspeak": { >> dist\TeamSpeak-OBS-Bridge-App\data\levels || exit /b 1
+echo         "level": "INFO", >> dist\TeamSpeak-OBS-Bridge-App\data\levels || exit /b 1
+echo         "create_file": false >> dist\TeamSpeak-OBS-Bridge-App\data\levels || exit /b 1
+echo     }, >> dist\TeamSpeak-OBS-Bridge-App\data\levels || exit /b 1
+echo     "obs": { >> dist\TeamSpeak-OBS-Bridge-App\data\levels || exit /b 1
+echo         "level": "INFO", >> dist\TeamSpeak-OBS-Bridge-App\data\levels || exit /b 1
+echo         "create_file": false >> dist\TeamSpeak-OBS-Bridge-App\data\levels || exit /b 1
+echo     }, >> dist\TeamSpeak-OBS-Bridge-App\data\levels || exit /b 1
+echo     "bridge": { >> dist\TeamSpeak-OBS-Bridge-App\data\levels || exit /b 1
+echo         "level": "INFO", >> dist\TeamSpeak-OBS-Bridge-App\data\levels || exit /b 1
+echo         "create_file": false >> dist\TeamSpeak-OBS-Bridge-App\data\levels || exit /b 1
+echo     } >> dist\TeamSpeak-OBS-Bridge-App\data\levels || exit /b 1
+echo } >> dist\TeamSpeak-OBS-Bridge-App\data\levels || exit /b 1
 echo %VERSION% > "dist\TeamSpeak-OBS-Bridge-App\data\version" || exit /b 1
 echo %BRANCH%>> "dist\TeamSpeak-OBS-Bridge-App\data\version" || exit /b 1
 

@@ -22,12 +22,27 @@ pyinstaller -n "TeamSpeak-OBS-Bridge-App" -D src/bridge.py --paths=./modules
 echo "Creating levels file"
 mkdir "dist/TeamSpeak-OBS-Bridge-App/data"
 echo "{
-    \"database\":\"INFO\",
-    \"webui\":\"WARNING\",
-    \"teamspeak\":\"INFO\",
-    \"obs\":\"INFO\",
-    \"bridge\":\"INFO\"
-}" > dist/TeamSpeak-OBS-Bridge-App/data/levels
+    \"database\": {
+        \"level\": \"INFO\",
+        \"create_file\": false
+    },
+    \"webui\": {
+        \"level\": \"WARNING\",
+        \"create_file\": false
+    },
+    \"teamspeak\": {
+        \"level\": \"INFO\",
+        \"create_file\": false
+    },
+    \"obs\": {
+        \"level\": \"INFO\",
+        \"create_file\": false
+    },
+    \"bridge\": {
+        \"level\": \"INFO\",
+        \"create_file\": false
+    }
+}" > dist/TeamSpeak-OBS-Bridge-App/data/log_settings
 echo "$VERSION
 $BRANCH" > "dist/TeamSpeak-OBS-Bridge-App/data/version"
 
