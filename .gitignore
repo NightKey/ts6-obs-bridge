@@ -5,3 +5,5 @@ venv*
 *.db*
 *.spec
 *__pycache__*
+database.db
+*logs*

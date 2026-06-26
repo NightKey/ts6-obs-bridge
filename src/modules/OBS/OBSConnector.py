@@ -5,7 +5,7 @@ import hashlib
 from typing import Dict
 
 from smdb_logger import Logger
-from websockets import connect, ClientConnection, ConnectionClosedOK, ConnectionClosedError, State
+from websockets import connect, ClientConnection, ConnectionClosedOK, ConnectionClosedError, State, CloseCode
 from json import loads, dumps
 from time import time
 import random
@@ -20,11 +20,13 @@ class OBSConnector(BaseConnector):
     __logger: Logger
     user_scenes: Dict[str, SceneItem] = {}
     requested_states: Dict[str, UserStatus] = {}
-    stop_event: Event = Event()
     message_queue: Queue
+    watchdog_loop_task: Task | None = None
     websocket: ClientConnection | None = None
     obs_initialized_event: Event = Event()
-    obs_ready: bool = False
+    stop_event: Event = Event()
+    stopped: Event = Event()
+    failed: bool = False
 
     @property
     def request_id(self) -> str:
@@ -44,6 +46,7 @@ class OBSConnector(BaseConnector):
 
     def __init__(self, logger: Logger):
         self.__logger = logger
+        self.stopped.set()
 
     async def send(self, data: dict, op_code: OpCode):
         self.logger.trace(f"Sending opcode: {op_code.name}")
@@ -60,29 +63,36 @@ class OBSConnector(BaseConnector):
     async def watchdog_loop(self):
         self.logger.trace("Starting watchdog loop")
         while not self.stop_event.is_set():
-            self.logger.trace(".")
-            if not self.obs_initialized_event.is_set() and self.obs_ready:
+            self.logger.heartbeat(".")
+            if not self.obs_initialized_event.is_set() and not self.stopped.is_set():
                 await self.__re_init_obs()
             await asyncio.sleep(0.5)
+        await self.snapshot_current_state()
+        if not self.failed: await self.set_all_user_to(UserStatus.Left)
+        await self.__cleanup()
 
     @async_wrapped
     async def retrieve_loop(self):
         self.logger.debug("Starting retrieve loop")
-        while not self.stop_event.is_set():
+        while not self.stopped.is_set():
             try:
                 async with timeout(0.5):
                     message = await self.websocket.recv()
                     await self.message_queue.put(message)
-                self.logger.trace(".")
+                self.logger.heartbeat(".")
             except TimeoutError:
                 continue
-            except ConnectionClosedOK:
-                self.logger.warning("OBS Closed the connection without error")
+            except ConnectionClosedOK as cco:
+                if cco.rcvd.code == CloseCode.NORMAL_CLOSURE: break
+                self.logger.warning(f"OBS Closed the connection without error ({cco.rcvd})")
+                self.failed = True
                 self.stop_event.set()
+                self.stopped.set()
             except ConnectionClosedError as cce:
                 self.logger.error("OBS Closed connection with error", cce)
+                self.failed = True
                 self.stop_event.set()
-        await self.__cleanup()
+                self.stopped.set()
 
     @async_wrapped
     async def get_message(self, required_op_code: OpCode) -> dict:
@@ -101,11 +111,11 @@ class OBSConnector(BaseConnector):
     @async_wrapped
     async def connect(self, obs_ip: str, obs_port: int, obs_password: str) -> bool:
         self.stop_event.clear()
+        self.stopped.clear()
         self.message_queue = Queue()
         self.logger.info(f"Connecting to OBS on ws://{obs_ip}:{obs_port}")
         self.websocket = await connect(f"ws://{obs_ip}:{obs_port}/websockets")
         create_task(self.retrieve_loop(), name="OBS retrieve task")
-        create_task(self.watchdog_loop(), name="OBS watchdog task")
         # Adapted from Elektordi(https://github.com/Elektordi/obs-websocket-py/blob/master/obswebsocket/core.py) , MIT License
         response = await self.get_message(OpCode.Hello)
         auth = ""
@@ -140,23 +150,37 @@ class OBSConnector(BaseConnector):
             self.websocket = None
             raise OBSException("Bad RpcVersion")
 
+        self.logger.debug(f"OBS Connected. Requested states: {[user + '-' + state.name for user, state in self.requested_states.items()]}")
         await self.init_obs()
-        self.obs_ready = True
+        self.failed = False
+        self.watchdog_loop_task = create_task(self.watchdog_loop(), name="OBS watchdog task")
         return True
 
     def close(self) -> None:
         if self.stop_event.is_set(): return
         self.logger.info("Closing OBS connector")
         self.stop_event.set()
+        if self.watchdog_loop_task is None:
+            self.stopped.set()
 
     @async_wrapped
-    async def __cleanup(self):
+    async def __cleanup(self) -> None:
         self.logger.info("Cleanup")
         await self.websocket.close()
         self.websocket = None
         self.user_scenes.clear()
-        self.obs_ready = False
         self.watchdog_loop_task = None
+        self.stopped.set()
+
+    @async_wrapped
+    async def snapshot_current_state(self) -> None:
+        for user, data in self.user_scenes.items():
+            state = UserStatus.Left
+            for item in data.sub_items:
+                if item.enabled:
+                    state = UserStatus(item.itemName)
+                    break
+            self.requested_states[user] = state
 
     @async_wrapped
     async def re_init_obs(self) -> None:
@@ -179,6 +203,7 @@ class OBSConnector(BaseConnector):
         self.logger.trace(f"Scene bulk request response: {response}")
         if not response['d']["requestStatus"]["result"]:
             self.logger.warning("Failed to get scene list.")
+            await self.__cleanup()
             raise OBSException("Failed to get scene list.")
         for scene in response['d']["responseData"]['scenes']:
             name = scene["sceneName"]
@@ -187,7 +212,7 @@ class OBSConnector(BaseConnector):
                 item = SceneItem(itemName=name, itemId=scene["sceneIndex"], enabled=scene_user in self.requested_states)
                 self.user_scenes[scene_user] = item
                 await self.set_all_to_known(item, scene_user)
-                if scene_user in self.requested_states: del self.requested_states[scene_user]
+                if item.enabled: del self.requested_states[scene_user]
         self.obs_initialized_event.set()
 
     @async_wrapped
@@ -206,8 +231,13 @@ class OBSConnector(BaseConnector):
         requests = []
         for item in response['d']["responseData"]["sceneItems"]:
             subitem_name = item["sourceName"].split('-')[-1]
-            sub_item = SceneItem(itemName=subitem_name, itemId=item["sceneItemId"], enabled=scene_user in self.requested_states and subitem_name == self.requested_states[scene_user].value)
-            requests.append(sub_item.get_request(scene.itemName,self.request_id).to_request_dict())
+            sub_item = SceneItem(
+                itemName=subitem_name,
+                itemId=item["sceneItemId"],
+                enabled=scene_user in self.requested_states and subitem_name == self.requested_states[scene_user].value
+            )
+            self.logger.trace(f"Scene request created for {scene.itemName}-{subitem_name}. IsEnabled: {sub_item.enabled}")
+            requests.append(sub_item.get_request(scene.itemName, self.request_id).to_request_dict())
             scene.add_sub_item(sub_item)
 
         if len(request) == 0: return
@@ -218,6 +248,11 @@ class OBSConnector(BaseConnector):
         }
         await self.send(batch_request, OpCode.RequestBatch)
         await self.get_message(OpCode.RequestBatchResponse)
+
+    @async_wrapped
+    async def set_all_user_to(self, target_state: UserStatus, only_present: bool = False) -> None:
+        for name in self.user_scenes.keys():
+            await self.set_user_to(name, target_state, only_present)
 
     @async_wrapped
     async def set_user_to(self, name: str, target_state: UserStatus, only_present: bool = False) -> None:
@@ -247,8 +282,8 @@ class OBSConnector(BaseConnector):
     @async_wrapped
     async def toggle_deafen(self, is_deafened: bool):
         self.logger.debug(f"Toggling deafen to {is_deafened}")
-        for name in self.user_scenes.keys():
-            await self.set_user_to(name, UserStatus.Muted if is_deafened else UserStatus.Quiet, only_present=True)
+        await self.set_all_user_to(UserStatus.Muted if is_deafened else UserStatus.Quiet, only_present=True)
+
 
     def get_scene_map(self) -> dict:
         return {"connected": self.is_connected, "message_queue":self.message_queue.qsize(), "scenes":[{"name": name, "present": scene.enabled, "all": [{"name":x.itemName, "enabled":x.enabled} for x in scene.sub_items]} for name, scene in self.user_scenes.items()]}

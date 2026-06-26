@@ -16,6 +16,7 @@ class TeamSpeak6Connector(BaseConnector):
     user: ClientInfo
     websocket: ClientConnection | None = None
     stop_event: Event = Event()
+    stopped: Event = Event()
     user_status_map: Dict[int, ClientInfo] = {}
     version: str
 
@@ -42,6 +43,7 @@ class TeamSpeak6Connector(BaseConnector):
         self.version = version
         self.user_status_changed_callback = user_status_changed_callback
         self.user_deafened_changed_callback = user_deafened_changed_callback
+        self.stopped.set()
 
     def evaluate_client_info(self, client_info: ClientInfo | None, user_channel: int | None = None) -> UserStatus | None:
         if client_info is None or client_info.name is None: return None
@@ -104,7 +106,7 @@ class TeamSpeak6Connector(BaseConnector):
             raise TeamSpeakException(f"Could not determine user. Please connect to a server.")
         await self.load_clients_present(response["payload"]["connections"][0]["clientId"],  response["payload"]["connections"][0]["clientInfos"])
         self.logger.debug(f"User id: {self.user.id}")
-
+        self.stopped.clear()
         create_task(self.retrieve_loop(), name="TS6 retrieve task")
         return True
 
@@ -132,6 +134,7 @@ class TeamSpeak6Connector(BaseConnector):
         await self.websocket.close()
         self.user_status_map.clear()
         self.websocket = None
+        self.stopped.set()
 
     @async_wrapped
     async def retrieve_loop(self) -> None:
@@ -148,7 +151,7 @@ class TeamSpeak6Connector(BaseConnector):
                         await self.client_channel_group_changed(message["payload"])
                     elif message["type"] == "clientMoved":
                         await self.client_moved(message["payload"])
-                self.logger.trace(".")
+                self.logger.heartbeat(".")
             except TimeoutError:
                 pass
             except ConnectionClosedOK:

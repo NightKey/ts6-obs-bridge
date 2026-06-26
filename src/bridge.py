@@ -34,10 +34,11 @@ class Bridge:
                     use_caller_name=True,
                     use_file_names=True,
                     level=LEVEL.from_string(LEVELS["database"]["level"]),
-                    log_file_name="database" if LEVELS["database"]["create_file"] else None,
+                    log_file_name="database.log",
                     log_folder=LOG_FOLDER,
                     level_only_valid_for_console=True,
-                    max_logfile_lifetime=2
+                    max_logfile_lifetime=2,
+                    enable_file=LEVELS["database"]["create_file"]
                 ),
                 data_path=DATA_FOLDER
             )
@@ -49,11 +50,13 @@ class Bridge:
                 log_to_console=True,
                 use_caller_name=True,
                 use_file_names=True,
+                use_log_name=True,
                 level=LEVEL.from_string(LEVELS["obs"]["level"]),
-                log_file_name="obs" if LEVELS["obs"]["create_file"] else None,
+                log_file_name="obs.log",
                 log_folder=LOG_FOLDER,
                 level_only_valid_for_console=True,
-                max_logfile_lifetime=2
+                max_logfile_lifetime=2,
+                enable_file=LEVELS["obs"]["create_file"]
             )
         )
         self.team_speak_6_connector = TeamSpeak6Connector(
@@ -61,11 +64,13 @@ class Bridge:
                 log_to_console=True,
                 use_caller_name=True,
                 use_file_names=True,
+                use_log_name=True,
                 level=LEVEL.from_string(LEVELS["teamspeak"]["level"]),
-                log_file_name="teamspeak" if LEVELS["teamspeak"]["create_file"] else None,
+                log_file_name="teamspeak.log",
                 log_folder=LOG_FOLDER,
                 level_only_valid_for_console=True,
-                max_logfile_lifetime=2
+                max_logfile_lifetime=2,
+                enable_file=LEVELS["teamspeak"]["create_file"]
             ),
             version=self.version,
             user_status_changed_callback=self.user_state_changed,
@@ -80,10 +85,11 @@ class Bridge:
                 use_caller_name=True,
                 use_file_names=True,
                 level=LEVEL.from_string(LEVELS["webui"]["level"]),
-                log_file_name="webui" if LEVELS["webui"]["create_file"] else None,
+                log_file_name="webui.log",
                 log_folder=LOG_FOLDER,
                 level_only_valid_for_console=True,
-                max_logfile_lifetime=2
+                max_logfile_lifetime=2,
+                enable_file=LEVELS["webui"]["create_file"]
             ),
             get_settings_callback=self.get_settings,
             update_settings_callback=self.update_settings,
@@ -185,7 +191,7 @@ class Bridge:
             except ConnectionRefusedError:
                 pass
             try:
-                self.logger.trace(f"Checking if OBS is connected {self.team_speak_6_connector.is_connected}")
+                self.logger.trace(f"Checking if OBS is connected {self.obs_connector.is_connected}")
                 if not self.obs_connector.is_connected:
                     await self.connect_to_obs()
             except OBSException as oe:
@@ -245,7 +251,14 @@ class Bridge:
         self.logger.trace("Database close called")
         self.web_ui.close()
         self.logger.trace("WebUI close called")
+        self.logger.debug("Waiting for TeamSpeak to stop")
+        while not self.team_speak_6_connector.stopped.is_set():
+            loop.run_until_complete(sleep(1))
+        self.logger.debug("Waiting for OBS to stop")
+        while not self.obs_connector.stopped.is_set():
+            loop.run_until_complete(sleep(1))
         self.closed = True
+        self.logger.debug("All processes closed!")
 
     def get_ts_user_map(self) -> dict:
         return self.team_speak_6_connector.get_user_map()
@@ -268,10 +281,11 @@ if __name__=="__main__":
         use_caller_name=True,
         use_file_names=True,
         level=LEVEL.from_string(LEVELS["bridge"]["level"]),
-        log_file_name="bridge" if LEVELS["bridge"]["create_file"] else None,
+        log_file_name="bridge.log",
         log_folder=LOG_FOLDER,
         level_only_valid_for_console=True,
-        max_logfile_lifetime=2
+        max_logfile_lifetime=2,
+        enable_file=LEVELS["bridge"]["create_file"]
     )
     bridge_logger.info(f"Starting application version {'-'.join(VERSION.split('\n'))}")
     bridge = Bridge(bridge_logger, VERSION)
