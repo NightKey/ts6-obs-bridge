@@ -1,6 +1,7 @@
 from functools import wraps
 from time import time_ns
 from threading import Lock
+from unittest import result
 
 from modules import BaseConnector
 
@@ -37,6 +38,24 @@ def async_wrapped(func):
             open_calls_lock.release()
             show_open_calls(self.logger.trace)
     return async_timed_wrapper
+
+def async_sync(func):
+    """
+    Synchronizes async calls
+    """
+    @wraps(func)
+    async def async_sync_wrapper(self: BaseConnector, *args, **kwargs):
+        self.logger.debug(f"Acquiring sync-lock for {func.__name__}")
+        await self.sync_lock.acquire()
+        try:
+            result = await func(self, *args, **kwargs)
+            self.logger.debug(f"Synchronized function {func.__name__} finished")
+            return result
+        finally:
+            self.logger.debug(f"Releasing sync-lock for {func.__name__}")
+            self.sync_lock.release()
+
+    return async_sync_wrapper
 
 def show_open_calls(print) -> None:
     open_calls_lock.acquire()

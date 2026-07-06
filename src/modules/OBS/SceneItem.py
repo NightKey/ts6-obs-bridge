@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import List
 
 from . import Request, RequestType
@@ -9,6 +10,7 @@ class SceneItem:
     itemId: int
     itemName: str
     enabled: bool
+    enable_change: datetime = field(default_factory=datetime.now)
     sub_items: List['SceneItem'] = field(default_factory=list)
 
     def get_sub_item(self, item_name: str) -> 'SceneItem | None':

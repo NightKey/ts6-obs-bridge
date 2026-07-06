@@ -1,11 +1,11 @@
 from dataclasses import dataclass
-from typing import Dict
+from typing import Dict, Any
 
 
 @dataclass
 class ClientInfo:
     id: int
-    name: str | None
+    name: str
     channel_id: int | None
     is_talking: bool | None
     is_muted: bool | None
@@ -13,10 +13,10 @@ class ClientInfo:
     is_muted_by_user: bool | None
 
     @classmethod
-    def from_dict(cls, data: Dict[str, any], id: int | None = None) -> 'ClientInfo':
+    def from_dict(cls, data: Dict[str, Any], id: int | None = None) -> 'ClientInfo':
         return ClientInfo(
             id=id if id is not None else data["id"],
-            name=data["properties"]["nickname"] if "nickname" in data["properties"] else None,
+            name=data["properties"]["nickname"] if "nickname" in data["properties"] else "Unknown User",
             is_talking=data["properties"]["isTalker"] if "isTalker" in data["properties"] else None,
             is_muted=data["properties"]["inputMuted"] if "inputMuted" in data["properties"] else None,
             is_deafened=data["properties"]["outputMuted"] if "outputMuted" in data["properties"] else None,

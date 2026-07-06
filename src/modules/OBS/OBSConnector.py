@@ -1,5 +1,5 @@
 import asyncio
-from asyncio import timeout, Queue, create_task, Event, Task
+from asyncio import timeout, Queue, create_task, Event, Task, Lock
 import base64
 import hashlib
 from typing import Dict
@@ -18,6 +18,7 @@ from .. import UserStatus, BaseConnector, async_wrapped
 
 class OBSConnector(BaseConnector):
     __logger: Logger
+    sync_lock = Lock()
     user_scenes: Dict[str, SceneItem] = {}
     requested_states: Dict[str, UserStatus] = {}
     message_queue: Queue
@@ -268,7 +269,7 @@ class OBSConnector(BaseConnector):
             new_state = item.itemName == target_state.value
             if item.enabled and new_state: return # Same state True, already set to that.
             if not item.enabled and not new_state: continue # Same false, no need to send all 3 request, when someone leaves.
-            item.enabled =  new_state
+            item.enabled = new_state
             requests.append(item.get_request(scene.itemName, self.request_id).to_request_dict())
 
         batch_request = {
