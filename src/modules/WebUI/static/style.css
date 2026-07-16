@@ -43,7 +43,7 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    overflow: hidden;
+    overflow: auto;
 }
 
 /* Dashboard Container Block */
@@ -709,4 +709,183 @@ input:checked + .slider:before {
     .form-grid {
         grid-template-columns: 1fr;
     }
+}
+
+/* ==========================================================================
+   9. CUSTOM SLIDERS & DOUBLE RANGE COMPONENT
+   ========================================================================== */
+
+/* Removed In-HTML Element Styles */
+.autoconnect-label {
+    margin-bottom: 0;
+    cursor: pointer;
+}
+
+#btnConnectAll {
+    display: none;
+}
+
+/* Slider Header Styling */
+.slider-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.25rem;
+}
+
+.slider-badge {
+    background-color: var(--color-main-dark);
+    color: #ffffff;
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+    border: 1px solid rgba(165, 201, 226, 0.2);
+}
+
+/* Single Slider Container */
+.slider-track-container {
+    position: relative;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    height: 30px;
+}
+
+/* Standardizing Range Input Defaults */
+.custom-slider, .range-input {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    background: transparent;
+    pointer-events: auto;
+    outline: none;
+}
+
+/* Single Track Background Fixed and Visible */
+.custom-slider::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 6px;
+    background: rgba(90, 101, 133, 0.4);
+    border-radius: 3px;
+}
+
+/* Single Thumb Styling */
+.custom-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    height: 18px;
+    width: 18px;
+    border-radius: 50%;
+    background: var(--color-sec-light);
+    border: 2px solid var(--color-sec-dark);
+    cursor: pointer;
+    margin-top: -6px; /* Center thumb vertically on track */
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    transition: background 0.1s ease, transform 0.1s ease;
+}
+
+.custom-slider::-webkit-slider-thumb:hover {
+    background: #ffffff;
+    transform: scale(1.1);
+}
+
+/* --- Double Range Slider Track and Positioning --- */
+.range-slider-container {
+    position: relative;
+    width: 100%;
+    height: 30px;
+    display: flex;
+    align-items: center;
+}
+
+.range-slider-track {
+    position: absolute;
+    width: 100%;
+    height: 6px;
+    background: rgba(90, 101, 133, 0.4);
+    border-radius: 3px;
+    z-index: 1;
+}
+
+/* Absolute overlap layout for the dual controls */
+.range-input {
+    position: absolute;
+    width: 100%;
+    pointer-events: none; /* Allows pointer clicks to pass through the empty background areas */
+    z-index: 2;
+}
+
+/* Enable pointer events back only on the handles */
+.range-input::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    pointer-events: auto; /* Re-enables clicking and dragging directly on the thumb */
+    height: 18px;
+    width: 18px;
+    border-radius: 50%;
+    background: var(--color-sec-light);
+    border: 2px solid var(--color-sec-dark);
+    cursor: pointer;
+    margin-top: -6px; /* Match standard track alignments */
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    position: relative;
+    z-index: 3;
+    transition: background 0.1s ease, transform 0.1s ease;
+}
+
+.range-input::-webkit-slider-thumb:hover {
+    background: #ffffff;
+    transform: scale(1.1);
+}
+
+/* Duplicate thumb states for Firefox */
+.custom-slider::-moz-range-thumb {
+    height: 16px;
+    width: 16px;
+    border-radius: 50%;
+    background: var(--color-sec-light);
+    border: 2px solid var(--color-sec-dark);
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+}
+
+.range-input::-moz-range-thumb {
+    pointer-events: auto;
+    height: 16px;
+    width: 16px;
+    border-radius: 50%;
+    background: var(--color-sec-light);
+    border: 2px solid var(--color-sec-dark);
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+}
+
+/* ==========================================================================
+   10. MODIFIED CUSTOM SLIDER & DOUBLE RANGE ADJUSTMENTS
+   ========================================================================== */
+
+/* Fix standard Single Slider track background (previously invisible) */
+.custom-slider::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 6px;
+    background: rgba(90, 101, 133, 0.4); /* Uses lighter main color at 40% opacity */
+    border-radius: 3px;
+    border: none;
+}
+
+/* Fix standard Single Slider track background for Firefox */
+.custom-slider::-moz-range-track {
+    width: 100%;
+    height: 6px;
+    background: rgba(90, 101, 133, 0.4);
+    border-radius: 3px;
+    border: none;
+}
+
+/* Modern styling for the Blinking Toggle Container */
+.blinking-toggle-group {
+    background-color: rgba(23, 79, 117, 0.15);
+    border: 1px solid var(--border-subtle);
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    margin-top: 5px;
 }

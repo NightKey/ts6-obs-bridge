@@ -53,21 +53,106 @@ async function loadSettings() {
 
     const fields = [
         'teamspeak_ip', 'teamspeak_port', 'teamspeak_api',
-        'obs_ip', 'obs_port', 'obs_password'
+        'obs_ip', 'obs_port', 'obs_password',
+        'blink_time', 'low_blink_interval', 'high_blink_interval'
     ];
 
+    let missingCount = 0
     fields.forEach(fieldId => {
         const input = document.getElementById(fieldId);
+        if (data[fieldId] === null) {
+            missingCount++;
+        }
         if (input && data[fieldId] !== undefined) {
             input.value = data[fieldId];
         }
     });
 
+    if (missingCount > 2) {
+        // No settings present!
+        animateButtonToggleHide("ts_hide", "ts-form-grid");
+        animateButtonToggleHide("obs_hide", "obs-form-grid");
+        showError("No settings were present when starting the application!\nPlease save the settings!", "Missing settings", true)
+    }
+
+    // Handle range visualization sync after loading values
+    updateSliderVisuals();
+
     // Load in the auto-connect value at the start
     const autoconnectInput = document.getElementById('autoconnect');
-    if (autoconnectInput && data.autoconnect !== undefined) {
-        autoconnectInput.checked = !!data.autoconnect;
-        toggleConnectButtons(!!data.autoconnect);
+    if (autoconnectInput && data['autoconnect'] !== undefined) {
+        autoconnectInput.checked = !!data['autoconnect'];
+        toggleConnectButtons(!!data['autoconnect']);
+    }
+
+    // Load in 'blinking enabled' value
+    const blinkingEnabledInput = document.getElementById('blinking_enabled');
+    if (blinkingEnabledInput && data['blink_enabled'] !== undefined) {
+        blinkingEnabledInput.checked = !!data['blink_enabled'];
+    }
+}
+
+// Double slider handling & visualization rendering helper
+function updateSliderVisuals() {
+    const blinkTime = document.getElementById('blink_time');
+    const lowInterval = document.getElementById('low_blink_interval');
+    const highInterval = document.getElementById('high_blink_interval');
+    const track = document.getElementById('rangeTrack');
+
+    if (blinkTime) {
+        // Output as milliseconds (e.g., "450ms") since the range is 10ms - 1000ms
+        document.getElementById('blink_time_val').textContent = `${blinkTime.value}ms`;
+    }
+
+    if (lowInterval && highInterval && track) {
+        const min = parseInt(lowInterval.min);
+        const max = parseInt(lowInterval.max);
+        const val1 = parseInt(lowInterval.value);
+        const val2 = parseInt(highInterval.value);
+
+        // Highlight portion calculation
+        const percentLeft = ((val1 - min) / (max - min)) * 100;
+        const percentRight = ((val2 - min) / (max - min)) * 100;
+
+        track.style.background = `linear-gradient(to right, rgba(90, 101, 133, 0.4) ${percentLeft}%, var(--color-sec-dark) ${percentLeft}%, var(--color-sec-dark) ${percentRight}%, rgba(90, 101, 133, 0.4) ${percentRight}%)`;
+        document.getElementById('blink_interval_val').textContent = `${(val1 / 1000).toFixed(1)}s - ${(val2 / 1000).toFixed(1)}s`;
+    }
+}
+
+// Overlapping handler behavior configurations for range inputs
+function initSliders() {
+    const lowInput = document.getElementById('low_blink_interval');
+    const highInput = document.getElementById('high_blink_interval');
+    const blinkTimeInput = document.getElementById('blink_time');
+
+    if (lowInput && highInput) {
+        // Force the active slider's z-index hierarchy forward dynamically to prevent stuck overlaps
+        lowInput.addEventListener('mousedown', () => lowInput.style.zIndex = '4');
+        highInput.addEventListener('mousedown', () => highInput.style.zIndex = '4');
+        lowInput.addEventListener('touchstart', () => lowInput.style.zIndex = '4');
+        highInput.addEventListener('touchstart', () => highInput.style.zIndex = '4');
+
+        lowInput.addEventListener('input', () => {
+            lowInput.style.zIndex = '4';
+            highInput.style.zIndex = '2';
+            if (parseInt(lowInput.value) > parseInt(highInput.value) - 100) {
+                lowInput.value = parseInt(highInput.value) - 100;
+            }
+            updateSliderVisuals();
+        });
+
+        highInput.addEventListener('input', () => {
+            highInput.style.zIndex = '4';
+            lowInput.style.zIndex = '2';
+            if (parseInt(highInput.value) < parseInt(lowInput.value) + 100) {
+                highInput.value = parseInt(lowInput.value) + 100;
+            }
+            updateSliderVisuals();
+        });
+    }
+
+    if (blinkTimeInput) {
+        blinkTimeInput.addEventListener('input', updateSliderVisuals);
     }
 }
 
@@ -81,10 +166,19 @@ async function saveSettings() {
     const payload = {
         teamspeak_ip: document.getElementById('teamspeak_ip').value || document.getElementById('teamspeak_ip').placeholder,
         teamspeak_port: parseInt(document.getElementById('teamspeak_port').value || document.getElementById('teamspeak_port').placeholder, 10),
+        teamspeak_api: document.getElementById('teamspeak_api').value,
         obs_ip: document.getElementById('obs_ip').value || document.getElementById('obs_ip').placeholder,
         obs_port: parseInt(document.getElementById('obs_port').value || document.getElementById('obs_port').placeholder, 10),
         obs_password: document.getElementById('obs_password').value,
-        autoconnect: document.getElementById('autoconnect').checked
+        autoconnect: document.getElementById('autoconnect').checked,
+
+        // Custom added slider payloads
+        blink_time: parseInt(document.getElementById('blink_time').value, 10),
+        low_blink_interval: parseInt(document.getElementById('low_blink_interval').value, 10),
+        high_blink_interval: parseInt(document.getElementById('high_blink_interval').value, 10),
+
+        // Save blinking enabled state
+        "blinking enabled": document.getElementById('blinking_enabled').checked
     };
 
     const response = await apiFetch('update_settings', {
@@ -154,6 +248,20 @@ async function toggleAutoConnect() {
         delay_count = 3;
         warnTemaSpeak();
     }
+}
+
+// Toggle blinking on demand endpoint caller
+async function toggleBlinking() {
+    const toggle = document.getElementById('blinking_enabled');
+    if (!toggle) return;
+
+    await apiFetch('set_blinking', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ "value": toggle.checked })
+    });
 }
 
 // Toggle button visibilities depending on autoconnect state
@@ -302,19 +410,13 @@ function animateButtonToggleHide(buttonName, gridName) {
     }
 }
 
-async function obsHideClick() {
-    const button = document.getElementById("obs_hide");
-    const grid = document.getElementById("obs-form-grid");
-
-    if (!button || !grid) return;
-
-    animateButtonToggleHide(button, grid);
-}
-
 // Initialization and Event Listeners linking everything once the document loaded
 document.addEventListener('DOMContentLoaded', () => {
     // Populate form data on entry
     loadSettings().then();
+
+    // Setup multi-range visual callbacks
+    initSliders();
 
     // Setup initial connection state check, then run every 3000ms (3 seconds)
     checkConnectionState().then();
@@ -332,10 +434,11 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('errorPopup').classList.remove('show');
     });
     document.getElementById('ts_hide')?.addEventListener('click', () => {
-        animateButtonToggleHide("ts_hide", "ts-form-grid")
+        animateButtonToggleHide("ts_hide", "ts-form-grid");
     });
     document.getElementById('obs_hide')?.addEventListener('click', () => {
-        animateButtonToggleHide("obs_hide", "obs-form-grid")
+        animateButtonToggleHide("obs_hide", "obs-form-grid");
     });
     document.getElementById('autoconnect')?.addEventListener('change', toggleAutoConnect);
+    document.getElementById('blinking_enabled')?.addEventListener('change', toggleBlinking);
 });
