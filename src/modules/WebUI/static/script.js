@@ -2,14 +2,14 @@
 async function apiFetch(endpoint, options = {}) {
     const response = await fetch(`${endpoint}`, options);
     if (!response.ok) {
-        var errorMessage = response.statusText;
+        let errorMessage = response.statusText;
         if (response.status === 500) {
-            var errorMessage = await response.text();
+            errorMessage = await response.text();
 
             const parser = new DOMParser();
             const doc = parser.parseFromString(errorMessage, 'text/html');
 
-            var errorMessage = doc.body.lastChild.data;
+            errorMessage = doc.body.lastChild.data;
         }
         showError(errorMessage, `API Error on [${endpoint}]`);
         return null;
@@ -106,25 +106,25 @@ async function saveSettings() {
 }
 
 // 3. Periodic update: check state of connections every 3 seconds
-var delay_count = 0;
-var last_teamspeak_status = false;
-var last_obs_status = false;
+let delay_count = 0;
+let last_teamspeak_status = false;
+let last_obs_status = false;
 async function checkConnectionState() {
     const state = await apiFetch('get_state');
     if (!state) return;
 
     // Checks key cases exactly matching your specs: "teamspeak_connected" and "OBS_connected"
     if (state.hasOwnProperty('teamspeak_connected')) {
-        if (delay_count === 0 || (last_teamspeak_status != state.teamspeak_connected)) {
+        if (delay_count === 0 || (last_teamspeak_status !== state.teamspeak_connected)) {
             last_teamspeak_status = state.teamspeak_connected;
             updateStatusMarker('ts_status', state.teamspeak_connected);
-            if (state.teamspeak_connected && document.getElementById("teamspeak_api").value == "") {
+            if (state.teamspeak_connected && document.getElementById("teamspeak_api").value === "") {
                 await loadSettings();
             }
         }
     }
     if (state.hasOwnProperty('OBS_connected')) {
-        if (delay_count === 0 || last_obs_status != state.OBS_connected) {
+        if (delay_count === 0 || last_obs_status !== state.OBS_connected) {
             last_obs_status = state.OBS_connected;
             updateStatusMarker('obs_status', state.OBS_connected);
         }
@@ -206,7 +206,7 @@ async function connectAllConnections() {
 }
 
 function warnTemaSpeak() {
-    if (document.getElementById("teamspeak_api").value == "") {
+    if (document.getElementById("teamspeak_api").value === "") {
         showError("Please authorize the application in TeamSpeak 6", "Warning", true);
     }
 }
@@ -283,13 +283,41 @@ function openObsDiagnostics() {
     window.open("/obs");
 }
 
+function animateButtonToggleHide(buttonName, gridName) {
+    const button = document.getElementById(buttonName);
+    const grid = document.getElementById(gridName);
+
+    if (!button || !grid) return;
+
+    if (button.classList.contains("show")) {
+        button.classList.remove("show");
+        button.classList.add("hide");
+
+        grid.classList.remove("hidden");
+    } else {
+        button.classList.add("show");
+        button.classList.remove("hide");
+
+        grid.classList.add("hidden");
+    }
+}
+
+async function obsHideClick() {
+    const button = document.getElementById("obs_hide");
+    const grid = document.getElementById("obs-form-grid");
+
+    if (!button || !grid) return;
+
+    animateButtonToggleHide(button, grid);
+}
+
 // Initialization and Event Listeners linking everything once the document loaded
 document.addEventListener('DOMContentLoaded', () => {
     // Populate form data on entry
-    loadSettings();
+    loadSettings().then();
 
     // Setup initial connection state check, then run every 3000ms (3 seconds)
-    checkConnectionState();
+    checkConnectionState().then();
     setInterval(checkConnectionState, 3000);
 
     // Bind event listeners to DOM buttons using specified IDs
@@ -302,6 +330,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btnStop')?.addEventListener('click', stopAllConnections);
     document.getElementById('btnCloseError')?.addEventListener('click', () => {
         document.getElementById('errorPopup').classList.remove('show');
+    });
+    document.getElementById('ts_hide')?.addEventListener('click', () => {
+        animateButtonToggleHide("ts_hide", "ts-form-grid")
+    });
+    document.getElementById('obs_hide')?.addEventListener('click', () => {
+        animateButtonToggleHide("obs_hide", "obs-form-grid")
     });
     document.getElementById('autoconnect')?.addEventListener('change', toggleAutoConnect);
 });

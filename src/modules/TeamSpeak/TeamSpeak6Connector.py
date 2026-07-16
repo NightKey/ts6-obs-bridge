@@ -6,7 +6,7 @@ from json import loads, dumps
 from smdb_logger import Logger
 
 from . import TeamSpeakException, ClientInfo
-from .. import UserStatus, BaseConnector, async_wrapped, async_sync
+from .. import UserStatus, BaseConnector, async_wrapped, async_sync, TeamSpeakSettings
 
 
 class TeamSpeak6Connector(BaseConnector):
@@ -55,7 +55,7 @@ class TeamSpeak6Connector(BaseConnector):
         return UserStatus.Quiet
 
     @async_wrapped
-    async def request_auth(self, teamspeak_ip: str, teamspeak_port: int) -> str:
+    async def request_auth(self, settings: TeamSpeakSettings) -> str:
         self.logger.info("Requesting authentication from user")
         auth_request = {
             "type": "auth",
@@ -69,7 +69,7 @@ class TeamSpeak6Connector(BaseConnector):
                 }
             }
         }
-        websocket = await connect(f"ws://{teamspeak_ip}:{teamspeak_port}")
+        websocket = await connect(f"ws://{settings.ip}:{settings.port}")
         await websocket.send(dumps(auth_request))
         response = loads(await websocket.recv())
         await websocket.close()
@@ -80,7 +80,7 @@ class TeamSpeak6Connector(BaseConnector):
         return api_key
 
     @async_wrapped
-    async def connect(self, teamspeak_ip: str, teamspeak_port: int,teamspeak_api: str) -> bool:
+    async def connect(self, settings: TeamSpeakSettings) -> bool:
         self.stop_event.clear()
         self.logger.info("Connecting ot teamspeak")
         auth_request = {
@@ -91,11 +91,11 @@ class TeamSpeak6Connector(BaseConnector):
                 "name": "TeamSpeak6 to OBS Bridge",
                 "description": "A stream helper with TeamSpeak6 and OBS Studio integration.",
                 "content": {
-                    "apiKey": teamspeak_api
+                    "apiKey": settings.api
                 }
             }
         }
-        websocket = await connect(f"ws://{teamspeak_ip}:{teamspeak_port}")
+        websocket = await connect(f"ws://{settings.ip}:{settings.port}")
         await websocket.send(dumps(auth_request))
         response = loads(await websocket.recv())
         if response["status"]["message"] != "ok":
@@ -273,7 +273,8 @@ class TeamSpeak6Connector(BaseConnector):
         if not self.user.is_deafened: await self.user_status_changed_callback(user_name, new_status)
 
     @async_wrapped
-    async def user_deafened_changed(self, status: bool) -> None:
+    async def user_deafened_changed(self, status: bool | None) -> None:
+        if status is None: return
         await self.user_deafened_changed_callback(status)
 
     def get_user_map(self) -> dict:

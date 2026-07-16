@@ -1,12 +1,12 @@
 from smdb_db_manager import DBManager, Version
 
-from . import Settings
+from . import Settings, TeamSpeakSettings, OBSSettings
 
 
 class Database(DBManager):
     @property
     def current_version(self) -> Version:
-        return Version(0, 0, 4)
+        return Version(0, 0, 5)
 
     @DBManager.async_database_safe
     @DBManager.async_during_init
@@ -36,6 +36,18 @@ class Database(DBManager):
                 )
                 await self.db.commit()
                 version = Version(0, 0, 4)
+            if version == Version(0, 0, 4):
+                await self.db.execute(
+                    """ALTER TABLE settings ADD COLUMN low_blink_interval INTEGER DEFAULT null;"""
+                )
+                await self.db.execute(
+                    """ALTER TABLE settings ADD COLUMN high_blink_interval INTEGER DEFAULT null;"""
+                )
+                await self.db.execute(
+                    """ALTER TABLE settings ADD COLUMN blink_time INTEGER DEFAULT null;"""
+                )
+                await self.db.commit()
+                version = Version(0, 0, 5)
         return True
 
     @DBManager.async_database_safe
@@ -54,7 +66,10 @@ class Database(DBManager):
                 obs_password TEXT NOT NULL,
                 autoconnect INTEGER DEFAULT 0,
                 host TEXT DEFAULT '127.0.0.1',
-                port INTEGER DEFAULT 12345
+                port INTEGER DEFAULT 12345,
+                low_blink_interval INTEGER,
+                high_blink_interval INTEGER,
+                blink_time INTEGER
             ) STRICT;
             """
         )
@@ -65,35 +80,48 @@ class Database(DBManager):
     @DBManager.async_timed
     async def get_settings(self) -> Settings | None:
         result = await self.db.execute_fetchall(
-            f"""SELECT teamspeak_ip, teamspeak_port, teamspeak_api, obs_ip, obs_port, obs_password, autoconnect, host, port FROM settings"""
+            f"""SELECT teamspeak_ip, teamspeak_port, teamspeak_api, obs_ip, obs_port, obs_password, low_blink_interval, high_blink_interval, blink_time, autoconnect, host, port FROM settings"""
         )
         if len(result) == 0: return None
+        settings = result[0]
+        teamspeak_settings = TeamSpeakSettings(
+            ip=settings[0],
+            port=settings[1],
+            api=settings[2]
+        )
+        obs_settings = OBSSettings(
+            ip=settings[3],
+            port=settings[4],
+            password=settings[5],
+            low_blink_interval=settings[6],
+            high_blink_interval=settings[7],
+            blink_time=settings[8]
+        )
         return Settings(
-            teamspeak_ip=result[0][0],
-            teamspeak_port=result[0][1],
-            teamspeak_api=result[0][2],
-            obs_ip=result[0][3],
-            obs_port=result[0][4],
-            obs_password=result[0][5],
-            autoconnect=result[0][6],
-            host=result[0][7],
-            port=result[0][8]
+            teamspeak=teamspeak_settings,
+            obs=obs_settings,
+            autoconnect=settings[9],
+            host=settings[10],
+            port=settings[11]
         )
 
     @DBManager.async_database_safe
     @DBManager.async_timed
     async def upsert_settings(self, settings: Settings) -> bool:
         await self.db.execute(
-            f"""INSERT OR REPLACE INTO settings (teamspeak_ip, teamspeak_port, teamspeak_api, obs_ip, obs_port, obs_password, autoconnect, host, port)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            f"""INSERT OR REPLACE INTO settings (teamspeak_ip, teamspeak_port, teamspeak_api, obs_ip, obs_port, obs_password, low_blink_interval, high_blink_interval, blink_time, autoconnect, host, port)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
-                settings.teamspeak_ip,
-                settings.teamspeak_port,
-                settings.teamspeak_api,
-                settings.obs_ip,
-                settings.obs_port,
-                settings.obs_password,
+                settings.teamspeak.ip,
+                settings.teamspeak.port,
+                settings.teamspeak.api,
+                settings.obs.ip,
+                settings.obs.port,
+                settings.obs.password,
+                settings.obs.low_blink_interval,
+                settings.obs.high_blink_interval,
+                settings.obs.blink_time,
                 settings.autoconnect,
                 settings.host,
                 settings.port

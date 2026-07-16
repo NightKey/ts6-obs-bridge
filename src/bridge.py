@@ -133,27 +133,16 @@ class Bridge:
     async def connect_to_teamspeak(self) -> bool:
         self.logger.info("Connecting to TeamSpeak")
         if self.team_speak_6_connector.is_connected: return True
-        if self.settings.teamspeak_api is None or self.settings.teamspeak_api == "":
-            auth = await self.team_speak_6_connector.request_auth(
-                teamspeak_ip=self.settings.teamspeak_ip,
-                teamspeak_port=self.settings.teamspeak_port
-            )
-            self.settings.teamspeak_api = auth
+        if self.settings.teamspeak.api is None or self.settings.teamspeak.api == "":
+            auth = await self.team_speak_6_connector.request_auth(self.settings.teamspeak)
+            self.settings.teamspeak.api = auth
             await self.update_settings(self.settings)
-        return await self.team_speak_6_connector.connect(
-            teamspeak_ip=self.settings.teamspeak_ip,
-            teamspeak_port=self.settings.teamspeak_port,
-            teamspeak_api=self.settings.teamspeak_api
-        )
+        return await self.team_speak_6_connector.connect(self.settings.teamspeak)
 
     async def connect_to_obs(self) -> bool:
         self.logger.info("Connecting to OBS")
         if self.obs_connector.is_connected: return True
-        return await  self.obs_connector.connect(
-            obs_ip=self.settings.obs_ip,
-            obs_port=self.settings.obs_port,
-            obs_password=self.settings.obs_password
-        )
+        return await  self.obs_connector.connect(self.settings.obs)
 
     async def re_init_obs(self) -> None:
         await self.obs_connector.re_init_obs()

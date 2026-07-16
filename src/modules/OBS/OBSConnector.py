@@ -1,5 +1,5 @@
 import asyncio
-from asyncio import timeout, Queue, create_task, Event, Task, Lock
+from asyncio import timeout, Queue, create_task, Event, Task, Lock, sleep
 import base64
 import hashlib
 from typing import Dict
@@ -11,7 +11,7 @@ from time import time
 import random
 
 from . import OpCode, SceneItem, Request, RequestType, OBSException
-from .. import UserStatus, BaseConnector, async_wrapped
+from .. import UserStatus, BaseConnector, async_wrapped, OBSSettings
 
 
 # Documentation: https://github.com/obsproject/obs-websocket/blob/master/docs/generated/protocol.md
@@ -22,8 +22,12 @@ class OBSConnector(BaseConnector):
     user_scenes: Dict[str, SceneItem] = {}
     requested_states: Dict[str, UserStatus] = {}
     message_queue: Queue
+    low_blinking_interval: int | None = None
+    high_blinking_interval: int | None = None
+    blink_time: int | None = None
     watchdog_loop_task: Task | None = None
     websocket: ClientConnection | None = None
+    blinking_tasks: Dict[str, Task] = {}
     obs_initialized_event: Event = Event()
     stop_event: Event = Event()
     stopped: Event = Event()
@@ -110,12 +114,12 @@ class OBSConnector(BaseConnector):
         return response
 
     @async_wrapped
-    async def connect(self, obs_ip: str, obs_port: int, obs_password: str) -> bool:
+    async def connect(self, settings: OBSSettings) -> bool:
         self.stop_event.clear()
         self.stopped.clear()
         self.message_queue = Queue()
-        self.logger.info(f"Connecting to OBS on ws://{obs_ip}:{obs_port}")
-        self.websocket = await connect(f"ws://{obs_ip}:{obs_port}/websockets")
+        self.logger.info(f"Connecting to OBS on ws://{settings.ip}:{settings.port}")
+        self.websocket = await connect(f"ws://{settings.ip}:{settings.port}/websockets")
         create_task(self.retrieve_loop(), name="OBS retrieve task")
         # Adapted from Elektordi(https://github.com/Elektordi/obs-websocket-py/blob/master/obswebsocket/core.py) , MIT License
         response = await self.get_message(OpCode.Hello)
@@ -123,7 +127,7 @@ class OBSConnector(BaseConnector):
         if 'authentication' in response['d']:
             secret = base64.b64encode(
                 hashlib.sha256(
-                    (obs_password + response['d']['authentication']['salt']).encode('utf-8')
+                    (settings.password + response['d']['authentication']['salt']).encode('utf-8')
                 ).digest()
             )
             auth = base64.b64encode(
@@ -152,6 +156,9 @@ class OBSConnector(BaseConnector):
             raise OBSException("Bad RpcVersion")
 
         self.logger.debug(f"OBS Connected. Requested states: {[user + '-' + state.name for user, state in self.requested_states.items()]}")
+        self.low_blinking_interval = settings.low_blink_interval
+        self.high_blinking_interval = settings.high_blink_interval
+        self.blink_time = settings.blink_time
         await self.init_obs()
         self.failed = False
         self.watchdog_loop_task = create_task(self.watchdog_loop(), name="OBS watchdog task")
@@ -177,9 +184,9 @@ class OBSConnector(BaseConnector):
     async def snapshot_current_state(self) -> None:
         for user, data in self.user_scenes.items():
             state = UserStatus.Left
-            for item in data.sub_items:
+            for key, item in data.sub_items.items():
                 if item.enabled:
-                    state = UserStatus(item.itemName)
+                    state = key
                     break
             self.requested_states[user] = state
 
@@ -214,6 +221,13 @@ class OBSConnector(BaseConnector):
                 self.user_scenes[scene_user] = item
                 await self.set_all_to_known(item, scene_user)
                 if item.enabled: del self.requested_states[scene_user]
+                if (
+                        UserStatus.Blinking in item.sub_items.keys() and
+                        self.blink_time is not None and
+                        self.low_blinking_interval is not None and
+                        self.high_blinking_interval is not None
+                ):
+                    self.blinking_tasks[scene_user] = create_task(self.blinking_task(scene_user), name=f"{scene_user} blinking task")
         self.obs_initialized_event.set()
 
     @async_wrapped
@@ -239,7 +253,7 @@ class OBSConnector(BaseConnector):
             )
             self.logger.trace(f"Scene request created for {scene.itemName}-{subitem_name}. IsEnabled: {sub_item.enabled}")
             requests.append(sub_item.get_request(scene.itemName, self.request_id).to_request_dict())
-            scene.add_sub_item(sub_item)
+            scene.add_sub_item(UserStatus(subitem_name), sub_item)
 
         if len(request) == 0: return
         batch_request = {
@@ -256,6 +270,29 @@ class OBSConnector(BaseConnector):
             await self.set_user_to(name, target_state, only_present)
 
     @async_wrapped
+    async def blinking_task(self, user: str) -> None:
+        if self.blink_time is None or self.low_blinking_interval is None or self.high_blinking_interval is None:
+            self.logger.trace(f"Tried to create blinking task for {user} when some blinking values are None")
+            return
+        if self.user_scenes.get(user, None) is None or UserStatus.Blinking not in self.user_scenes.get(user).sub_items.keys(): return
+        self.logger.debug(f"Creating blinking task for {user}")
+        while not self.stop_event.is_set():
+            await sleep(random.randint(self.low_blinking_interval, self.high_blinking_interval) / 1000)
+            user_scene = self.user_scenes.get(user, None)
+            if user_scene is None or not user_scene.enabled: continue
+            await self.try_blinking(user, UserStatus.Blinking)
+            await sleep(self.blink_time / 1000)
+            await self.try_blinking(user, UserStatus.Quiet)
+
+    @async_wrapped
+    async def try_blinking(self, user: str, target_status: UserStatus) -> None:
+        user_scene = self.user_scenes.get(user)
+        quiet = user_scene.sub_items[UserStatus.Quiet]
+        blinking = user_scene.sub_items[UserStatus.Blinking]
+        if not quiet.enabled and not blinking.enabled: return
+        await self.set_user_to(user, target_status)
+
+    @async_wrapped
     async def set_user_to(self, name: str, target_state: UserStatus, only_present: bool = False) -> None:
         if not self.is_connected:
             self.requested_states[name] = target_state
@@ -265,7 +302,7 @@ class OBSConnector(BaseConnector):
         scene = self.user_scenes.get(name, None)
         if scene is None or (not scene.enabled and only_present): return
         scene.enabled = target_state.value != UserStatus.Left.value
-        for item in scene.sub_items:
+        for key, item in scene.sub_items.items():
             new_state = item.itemName == target_state.value
             if item.enabled and new_state: return # Same state True, already set to that.
             if not item.enabled and not new_state: continue # Same false, no need to send all 3 request, when someone leaves.
@@ -287,4 +324,4 @@ class OBSConnector(BaseConnector):
 
 
     def get_scene_map(self) -> dict:
-        return {"connected": self.is_connected, "message_queue":self.message_queue.qsize(), "scenes":[{"name": name, "present": scene.enabled, "all": [{"name":x.itemName, "enabled":x.enabled} for x in scene.sub_items]} for name, scene in self.user_scenes.items()]}
+        return {"connected": self.is_connected, "message_queue":self.message_queue.qsize(), "scenes":[{"name": name, "present": scene.enabled, "all": [{"name":x.itemName, "enabled":x.enabled} for k, x in scene.sub_items.items()]} for name, scene in self.user_scenes.items()]}

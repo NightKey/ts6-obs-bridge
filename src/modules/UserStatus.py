@@ -5,6 +5,7 @@ class UserStatus(Enum):
     Quiet = "quiet"
     Speaking = "speaking"
     Muted = "muted"
+    Blinking = "blinking"
     Left = "left"
 
     def __eq__(self, other):
@@ -16,8 +17,9 @@ class UserStatus(Enum):
 
     @staticmethod
     def from_string(string: str) -> 'UserStatus':
-        if string  ==  "quiet": return UserStatus.Quiet
-        if string  ==  "speaking": return UserStatus.Speaking
-        if string  ==  "muted": return UserStatus.Muted
-        if string  ==  "left": return UserStatus.Left
+        if string == "quiet": return UserStatus.Quiet
+        if string == "speaking": return UserStatus.Speaking
+        if string == "muted": return UserStatus.Muted
+        if string == "left": return UserStatus.Left
+        if string == "blinking": return UserStatus.Blinking
         raise NotImplemented

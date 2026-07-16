@@ -102,6 +102,8 @@ a:visited {
     border-radius: 12px;
     padding: 0.75rem;
     margin-bottom: 0.75rem;
+    transition-duration: 1s;
+    transition-property: height;
 }
 
 .section-title-container {
@@ -587,6 +589,23 @@ input:checked + .slider:before {
 .queue-count {
     font-size: 0.85rem;
     transition: color 0.2s ease;
+}
+
+.hide-button {
+    color: var(--color-sec-light);
+    cursor: pointer;
+}
+
+.hidden {
+    display: none;
+}
+
+.hide-button.show {
+    rotate: 0deg;
+}
+
+.hide-button.hide {
+    rotate: 90deg;
 }
 
 /* Dynamic status coloring managed via our logic thresholds */

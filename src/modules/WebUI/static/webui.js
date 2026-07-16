@@ -2,14 +2,14 @@
 async function apiFetch(endpoint, options = {}) {
     const response = await fetch(`${endpoint}`, options);
     if (!response.ok) {
-        var errorMessage = response.statusText;
+        let errorMessage = response.statusText;
         if (response.status === 500) {
-            var errorMessage = await response.text();
+            errorMessage = await response.text();
 
             const parser = new DOMParser();
             const doc = parser.parseFromString(errorMessage, 'text/html');
 
-            var errorMessage = doc.body.lastChild.data;
+            errorMessage = doc.body.lastChild.data;
         }
         showError(errorMessage, `API Error on [${endpoint}]`);
         return null;
@@ -98,12 +98,12 @@ function showError(message, title, temporary = false) {
 // Initialization and Event Listeners linking everything once the document loaded
 document.addEventListener('DOMContentLoaded', () => {
     // Populate form data on entry
-    loadSettings();
+    loadSettings().then();
 
     // Bind event listeners to DOM buttons using specified IDs
     document.getElementById('submit-btn')?.addEventListener('click', (e) => {
         e.preventDefault();
-        changeWebui();
+        changeWebui().then();
     });
 
     document.getElementById('btnCloseError')?.addEventListener('click', () => {
