@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, Any, Tuple
 
 from . import OBSSettings, TeamSpeakSettings
@@ -6,16 +6,16 @@ from . import OBSSettings, TeamSpeakSettings
 
 @dataclass
 class Settings:
-    teamspeak: TeamSpeakSettings
-    obs: OBSSettings
-    autoconnect: bool
-    host: str
-    port: int
+    teamspeak: TeamSpeakSettings | None = field(default=None)
+    obs: OBSSettings | None = field(default=None)
+    autoconnect: bool = field(default=False)
+    host: str = field(default="127.0.0.1")
+    port: int = field(default=12345)
 
     @staticmethod
     def from_json(json: Dict[str, Any]) -> 'Settings':
         teamspeak_settings = TeamSpeakSettings(
-            ip=json["teamspeak_ip"],
+            ip = json["teamspeak_ip"],
             port = json["teamspeak_port"],
             api = json["teamspeak_api"]
         )
@@ -23,9 +23,10 @@ class Settings:
             ip=json["obs_ip"],
             port=json["obs_port"],
             password=json["obs_password"],
-            low_blink_interval=json.get("low_blink_interval", None),
-            high_blink_interval=json.get("high_blink_interval", None),
-            blink_time=json.get("blink_time", None),
+            low_blink_interval=json.get("low_blink_interval", 0),
+            high_blink_interval=json.get("high_blink_interval", 0),
+            blink_time=json.get("blink_time", 0),
+            blink_enabled=json.get("blink_enabled", False),
         )
         return Settings(
             teamspeak=teamspeak_settings,
@@ -37,15 +38,16 @@ class Settings:
 
     def to_json(self) -> Dict[str, Any]:
         return {
-            "teamspeak_ip" : self.teamspeak.ip,
-            "teamspeak_port" : self.teamspeak.port,
-            "teamspeak_api" : self.teamspeak.api,
-            "obs_ip" : self.obs.ip,
-            "obs_port" : self.obs.port,
-            "obs_password" : self.obs.password,
-            "low_blink_interval": self.obs.low_blink_interval,
-            "high_blink_interval": self.obs.high_blink_interval,
-            "blink_time": self.obs.blink_time,
+            "teamspeak_ip" : self.teamspeak.ip if self.teamspeak is not None else None,
+            "teamspeak_port" : self.teamspeak.port if self.teamspeak is not None else None,
+            "teamspeak_api" : self.teamspeak.api if self.teamspeak is not None else None,
+            "obs_ip" : self.obs.ip if self.obs is not None else None,
+            "obs_port" : self.obs.port if self.obs is not None else None,
+            "obs_password" : self.obs.password if self.obs is not None else None,
+            "low_blink_interval": self.obs.low_blink_interval if self.obs is not None else 0,
+            "high_blink_interval": self.obs.high_blink_interval if self.obs is not None else 0,
+            "blink_time": self.obs.blink_time if self.obs is not None else 0,
+            "blink_enabled": self.obs.blink_enabled if self.obs is not None else False,
             "autoconnect" : self.autoconnect,
             "host": self.host,
             "port": self.port,

@@ -7,7 +7,8 @@ class TeamSpeakSettings:
     port: int
     api: str
 
-    def __ne__(self, other: TeamSpeakSettings) -> bool:
+    def __ne__(self, other: TeamSpeakSettings | None) -> bool:
+        if other is None: return True
         return (
             self.ip != other.ip or
             self.port != other.port or

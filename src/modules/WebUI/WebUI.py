@@ -24,6 +24,7 @@ class WebUI:
     obs_scene_map_callback: Callable[[], dict]
     re_init_obs_callback: Callable[[], Coroutine[Any, Any, None]]
     change_webui_settings_callback: Callable[[str, int], Coroutine[Any, Any, None]]
+    set_blinking_callback: Callable[[bool], Coroutine[Any, Any, None]]
     version: str
 
 
@@ -42,6 +43,7 @@ class WebUI:
             toggle_autoconnect_callback: Callable[[bool], Coroutine[Any, Any, None]],
             re_init_obs_callback: Callable[[], Coroutine[Any, Any, None]],
             change_webui_settings_callback: Callable[[str, int], Coroutine[Any, Any, None]],
+            set_blinking_callback: Callable[[bool], Coroutine[Any, Any, None]],
             version: str,
             host: str,
             port: int
@@ -59,12 +61,14 @@ class WebUI:
         self.toggle_autoconnect_callback = toggle_autoconnect_callback
         self.re_init_obs_callback = re_init_obs_callback
         self.change_webui_settings_callback = change_webui_settings_callback
+        self.set_blinking_callback = set_blinking_callback
         self.server = HTMLServer(host=host, port=port, root_path=path.dirname(__file__), logger=logger, title="Stream Control Panel")
         self.version = version
         # Main page
         self.server.add_url_rule("/", self.index)
         self.server.add_url_rule("/update_settings", self.update_settings, Protocol.Post)
         self.server.add_url_rule("/toggle_autoconnect", self.toggle_autoconnect, Protocol.Post)
+        self.server.add_url_rule("/set_blinking", self.set_blinking, Protocol.Post)
         self.server.add_url_rule("/get_settings", self.get_settings, disable_cache=True)
         self.server.add_url_rule("/get_state", self.get_state, disable_cache=True)
         self.server.add_url_rule("/connect_all", self.connect_all)
@@ -103,6 +107,10 @@ class WebUI:
 
     def obs_scene_map(self, _) -> str:
         return dumps(self.obs_scene_map_callback())
+
+    async def set_blinking(self, url_data: UrlData) -> str:
+        await self.set_blinking_callback(loads(url_data.data.decode())['value'])
+        return "{}"
 
     async def update_settings(self, url_data: UrlData) -> str:
         await self.update_settings_callback(Settings.from_json(loads(url_data.data.decode())))

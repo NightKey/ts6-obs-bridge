@@ -38,13 +38,16 @@ class Database(DBManager):
                 version = Version(0, 0, 4)
             if version == Version(0, 0, 4):
                 await self.db.execute(
-                    """ALTER TABLE settings ADD COLUMN low_blink_interval INTEGER DEFAULT null;"""
+                    """ALTER TABLE settings ADD COLUMN low_blink_interval INTEGER DEFAULT 0;"""
                 )
                 await self.db.execute(
-                    """ALTER TABLE settings ADD COLUMN high_blink_interval INTEGER DEFAULT null;"""
+                    """ALTER TABLE settings ADD COLUMN high_blink_interval INTEGER DEFAULT 0;"""
                 )
                 await self.db.execute(
-                    """ALTER TABLE settings ADD COLUMN blink_time INTEGER DEFAULT null;"""
+                    """ALTER TABLE settings ADD COLUMN blink_time INTEGER DEFAULT 0;"""
+                )
+                await self.db.execute(
+                    """ALTER TABLE settings ADD COLUMN blink_enabled INTEGER DEFAULT 0;"""
                 )
                 await self.db.commit()
                 version = Version(0, 0, 5)
@@ -58,18 +61,19 @@ class Database(DBManager):
         await self.db.execute(
             f"""
             CREATE TABLE IF NOT EXISTS settings (
-                teamspeak_ip TEXT NOT NULL UNIQUE,
-                teamspeak_port INTEGER NOT NULL,
+                teamspeak_ip TEXT NOT NULL,
+                teamspeak_port INTEGER NOT NULL UNIQUE,
                 teamspeak_api TEXT NOT NULL,
-                obs_ip TEXT NOT NULL UNIQUE,
-                obs_port INTEGER NOT NULL,
+                obs_ip TEXT NOT NULL,
+                obs_port INTEGER NOT NULL UNIQUE,
                 obs_password TEXT NOT NULL,
                 autoconnect INTEGER DEFAULT 0,
                 host TEXT DEFAULT '127.0.0.1',
                 port INTEGER DEFAULT 12345,
-                low_blink_interval INTEGER,
-                high_blink_interval INTEGER,
-                blink_time INTEGER
+                low_blink_interval INTEGER DEFAULT 0,
+                high_blink_interval INTEGER DEFAULT 0,
+                blink_time INTEGER DEFAULT 0,
+                blink_enabled INTEGER DEFAULT 0
             ) STRICT;
             """
         )
@@ -80,9 +84,11 @@ class Database(DBManager):
     @DBManager.async_timed
     async def get_settings(self) -> Settings | None:
         result = await self.db.execute_fetchall(
-            f"""SELECT teamspeak_ip, teamspeak_port, teamspeak_api, obs_ip, obs_port, obs_password, low_blink_interval, high_blink_interval, blink_time, autoconnect, host, port FROM settings"""
+            f"""SELECT teamspeak_ip, teamspeak_port, teamspeak_api, obs_ip, obs_port, obs_password, low_blink_interval, high_blink_interval, blink_time, blink_enabled, autoconnect, host, port FROM settings"""
         )
-        if len(result) == 0: return None
+        if len(result) == 0:
+            self.logger.warning("No settings found")
+            return None
         settings = result[0]
         teamspeak_settings = TeamSpeakSettings(
             ip=settings[0],
@@ -95,22 +101,24 @@ class Database(DBManager):
             password=settings[5],
             low_blink_interval=settings[6],
             high_blink_interval=settings[7],
-            blink_time=settings[8]
+            blink_time=settings[8],
+            blink_enabled=settings[9]
         )
         return Settings(
             teamspeak=teamspeak_settings,
             obs=obs_settings,
-            autoconnect=settings[9],
-            host=settings[10],
-            port=settings[11]
+            autoconnect=settings[10],
+            host=settings[11],
+            port=settings[12]
         )
 
     @DBManager.async_database_safe
     @DBManager.async_timed
     async def upsert_settings(self, settings: Settings) -> bool:
+        if settings.teamspeak is None or settings.obs is None: return False
         await self.db.execute(
-            f"""INSERT OR REPLACE INTO settings (teamspeak_ip, teamspeak_port, teamspeak_api, obs_ip, obs_port, obs_password, low_blink_interval, high_blink_interval, blink_time, autoconnect, host, port)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            f"""INSERT OR REPLACE INTO settings (teamspeak_ip, teamspeak_port, teamspeak_api, obs_ip, obs_port, obs_password, low_blink_interval, high_blink_interval, blink_time, blink_enabled, autoconnect, host, port)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 settings.teamspeak.ip,
@@ -122,6 +130,7 @@ class Database(DBManager):
                 settings.obs.low_blink_interval,
                 settings.obs.high_blink_interval,
                 settings.obs.blink_time,
+                settings.obs.blink_enabled,
                 settings.autoconnect,
                 settings.host,
                 settings.port

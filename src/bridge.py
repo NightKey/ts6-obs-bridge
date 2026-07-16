@@ -43,7 +43,7 @@ class Bridge:
                 data_path=DATA_FOLDER
             )
         )
-        self.settings = loop.run_until_complete(self.database.get_settings())
+        self.settings = loop.run_until_complete(self.database.get_settings()) or Settings()
         self.init_webui()
         self.obs_connector = OBSConnector(
             logger=Logger(
@@ -103,6 +103,7 @@ class Bridge:
             re_init_obs_callback=self.re_init_obs,
             toggle_autoconnect_callback=self.toggle_autoconnect,
             change_webui_settings_callback=self.change_webui_settings,
+            set_blinking_callback=self.set_blinking,
             version=self.version,
             host=self.settings.host,
             port=self.settings.port
@@ -132,6 +133,7 @@ class Bridge:
 
     async def connect_to_teamspeak(self) -> bool:
         self.logger.info("Connecting to TeamSpeak")
+        if self.settings.teamspeak is None: return False
         if self.team_speak_6_connector.is_connected: return True
         if self.settings.teamspeak.api is None or self.settings.teamspeak.api == "":
             auth = await self.team_speak_6_connector.request_auth(self.settings.teamspeak)
@@ -141,6 +143,7 @@ class Bridge:
 
     async def connect_to_obs(self) -> bool:
         self.logger.info("Connecting to OBS")
+        if self.settings.obs is None: return False
         if self.obs_connector.is_connected: return True
         return await  self.obs_connector.connect(self.settings.obs)
 
@@ -200,6 +203,12 @@ class Bridge:
         await self.update_settings(self.settings)
         if self.settings.autoconnect:
             Thread(target=self.autoconnect, name="Auto connect loop").start()
+
+    async def set_blinking(self, value: bool) -> None:
+        self.logger.debug(f"Setting blinking {value}")
+        self.settings.obs.blink_enabled = value
+        self.logger.trace("Updating settings")
+        await self.update_settings(self.settings)
 
     async def update_settings(self, data: Settings) -> None:
         if await self.database.upsert_settings(data):
