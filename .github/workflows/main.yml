@@ -3,7 +3,7 @@ name: Build Cross-Platform Releases
 on:
   push:
     tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+-Stable'
+      - 'v[0-9]+.[0-9]+.[0-9]+-(Stable | Beta)'
 
 jobs:
   compile-and-publish:
