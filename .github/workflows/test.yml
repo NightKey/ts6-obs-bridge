@@ -1,4 +1,4 @@
-name: Build Cross-Platform Releases
+name: Test Cross-Platform Releases
 
 on: push
 
