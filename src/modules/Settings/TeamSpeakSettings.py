@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from typing import Optional
+
 
 @dataclass
 class TeamSpeakSettings:
@@ -7,7 +9,7 @@ class TeamSpeakSettings:
     port: int
     api: str
 
-    def __ne__(self, other: TeamSpeakSettings | None) -> bool:
+    def __ne__(self, other: Optional['TeamSpeakSettings']) -> bool:
         if other is None: return True
         return (
             self.ip != other.ip or

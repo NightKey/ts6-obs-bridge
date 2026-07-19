@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Optional
 
 
 @dataclass
@@ -11,7 +12,7 @@ class OBSSettings:
     blink_time: int
     blink_enabled: bool
 
-    def __ne__(self, other: OBSSettings | None) -> bool:
+    def __ne__(self, other: Optional['OBSSettings']) -> bool:
         if other is None: return True
         return (
             self.ip != other.ip or
