@@ -15,6 +15,9 @@ class UserStatus(Enum):
     def __ne__(self, other):
         return not self == other
 
+    def __hash__(self):
+        return hash(self.name)
+
     @staticmethod
     def from_string(string: str) -> 'UserStatus':
         if string == "quiet": return UserStatus.Quiet
