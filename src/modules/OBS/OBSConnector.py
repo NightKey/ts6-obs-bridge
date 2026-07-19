@@ -2,12 +2,14 @@ import asyncio
 from asyncio import timeout, Queue, create_task, Event, Task, Lock, sleep
 import base64
 import hashlib
+from threading import Thread
 from typing import Dict
 
 from smdb_logger import Logger
 from websockets import connect, ClientConnection, ConnectionClosedOK, ConnectionClosedError, State, CloseCode
 from json import loads, dumps
 from time import time
+from time import sleep as tsleep
 import random
 
 from . import OpCode, SceneItem, Request, RequestType, OBSException
@@ -281,7 +283,9 @@ class OBSConnector(BaseConnector):
         if self.user_scenes.get(user, None) is None or UserStatus.Blinking not in self.user_scenes.get(user).sub_items.keys(): return
         self.logger.debug(f"Creating blinking task for {user}")
         while not self.stop_event.is_set():
-            await sleep(random.randint(self.low_blinking_interval, self.high_blinking_interval) / 1000)
+            sleep_between_blinks = random.randint(self.low_blinking_interval, self.high_blinking_interval) / 1000
+            self.logger.debug(f"Sleeping for {sleep_between_blinks} seconds")
+            await sleep(sleep_between_blinks)
             user_scene = self.user_scenes.get(user, None)
             if user_scene is None or not user_scene.enabled: continue
             await self.try_blinking(user, UserStatus.Blinking)
@@ -299,7 +303,7 @@ class OBSConnector(BaseConnector):
     @async_wrapped
     async def set_user_to(self, name: str, target_state: UserStatus, only_present: bool = False) -> None:
         if not self.is_connected:
-            if target_state == UserStatus.Left.value:
+            if target_state == UserStatus.Left:
                 if name in self.requested_states.keys():
                     del self.requested_states[name]
                 return
@@ -309,8 +313,11 @@ class OBSConnector(BaseConnector):
         self.logger.debug(f"Setting {name} user's scene to {target_state.name}")
         scene = self.user_scenes.get(name, None)
         if scene is None or (not scene.enabled and only_present): return
-        if target_state != UserStatus.Left.value:
+        if target_state != UserStatus.Left and not scene.enabled:
             self.add_blinking_to_user(name, scene)
+        elif scene.enabled and target_state == UserStatus.Left and name in self.blinking_tasks.keys():
+            self.blinking_tasks[name].cancel()
+            del self.blinking_tasks[name]
         scene.enabled = target_state.value != UserStatus.Left.value
         for key, item in scene.sub_items.items():
             new_state = item.itemName == target_state.value

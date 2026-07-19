@@ -192,7 +192,7 @@ async function saveSettings() {
         high_blink_interval: parseInt(document.getElementById('high_blink_interval').value, 10),
 
         // Save blinking enabled state
-        "blinking enabled": document.getElementById('blinking_enabled').checked
+        blink_enabled: document.getElementById('blinking_enabled').checked
     };
 
     const response = await apiFetch('update_settings', {
