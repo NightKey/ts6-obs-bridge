@@ -22,9 +22,10 @@ class OBSConnector(BaseConnector):
     user_scenes: Dict[str, SceneItem] = {}
     requested_states: Dict[str, UserStatus] = {}
     message_queue: Queue
-    low_blinking_interval: int | None = None
-    high_blinking_interval: int | None = None
-    blink_time: int | None = None
+    blink_enabled: bool
+    low_blinking_interval: int
+    high_blinking_interval: int
+    blink_time: int
     watchdog_loop_task: Task | None = None
     websocket: ClientConnection | None = None
     blinking_tasks: Dict[str, Task] = {}
@@ -156,6 +157,7 @@ class OBSConnector(BaseConnector):
             raise OBSException("Bad RpcVersion")
 
         self.logger.debug(f"OBS Connected. Requested states: {[user + '-' + state.name for user, state in self.requested_states.items()]}")
+        self.blink_enabled = settings.blink_enabled
         self.low_blinking_interval = settings.low_blink_interval
         self.high_blinking_interval = settings.high_blink_interval
         self.blink_time = settings.blink_time
@@ -182,12 +184,15 @@ class OBSConnector(BaseConnector):
 
     @async_wrapped
     async def snapshot_current_state(self) -> None:
+        self.logger.debug("Snapshotting current state")
         for user, data in self.user_scenes.items():
             state = UserStatus.Left
             for key, item in data.sub_items.items():
                 if item.enabled:
                     state = key
                     break
+            if state == UserStatus.Left: continue
+            self.logger.debug(f"{user}: {state}")
             self.requested_states[user] = state
 
     @async_wrapped
@@ -220,15 +225,14 @@ class OBSConnector(BaseConnector):
                 item = SceneItem(itemName=name, itemId=scene["sceneIndex"], enabled=scene_user in self.requested_states)
                 self.user_scenes[scene_user] = item
                 await self.set_all_to_known(item, scene_user)
-                if item.enabled: del self.requested_states[scene_user]
-                if (
-                        UserStatus.Blinking in item.sub_items.keys() and
-                        self.blink_time is not None and
-                        self.low_blinking_interval is not None and
-                        self.high_blinking_interval is not None
-                ):
-                    self.blinking_tasks[scene_user] = create_task(self.blinking_task(scene_user), name=f"{scene_user} blinking task")
+                if item.enabled:
+                    del self.requested_states[scene_user]
+                    self.add_blinking_to_user(scene_user, item)
         self.obs_initialized_event.set()
+
+    def add_blinking_to_user(self, scene_user: str, scene: SceneItem):
+        if UserStatus.Blinking in scene.sub_items.keys() and self.blink_enabled:
+            self.blinking_tasks[scene_user] = create_task(self.blinking_task(scene_user), name=f"{scene_user} blinking task")
 
     @async_wrapped
     async def set_all_to_known(self, scene: SceneItem, scene_user: str) -> None:
@@ -295,12 +299,18 @@ class OBSConnector(BaseConnector):
     @async_wrapped
     async def set_user_to(self, name: str, target_state: UserStatus, only_present: bool = False) -> None:
         if not self.is_connected:
+            if target_state == UserStatus.Left.value:
+                if name in self.requested_states.keys():
+                    del self.requested_states[name]
+                return
             self.requested_states[name] = target_state
             return
         requests = []
         self.logger.debug(f"Setting {name} user's scene to {target_state.name}")
         scene = self.user_scenes.get(name, None)
         if scene is None or (not scene.enabled and only_present): return
+        if target_state != UserStatus.Left.value:
+            self.add_blinking_to_user(name, scene)
         scene.enabled = target_state.value != UserStatus.Left.value
         for key, item in scene.sub_items.items():
             new_state = item.itemName == target_state.value

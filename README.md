@@ -1,9 +1,9 @@
 # Team Speak 6 - OBS Bridge
 This is a Utility created for a streamer friend.
 When a user that you have everything already set up for in OBS, joins or leaves the Team Speak channel, the icons will behave as expected.
-When you mute a user, there is a way to have a `muted` state to them so you can visibly silence them.
+When you mute a user, you can have a `muted` state to them so you can visibly silence them. When someone is quiet, blinking can be set up for them.
 
-When started, a web UI will be hosted on http://127.0.0.1:12345.
+When started, a web UI will be hosted by default on http://127.0.0.1:12345. This can be changed later.
 > [!IMPORTANT]
 > The UI was created with Gemini, as I'm not a UI developer.
 
@@ -18,6 +18,12 @@ When enabled, the two connect buttons will be swapped to a "connect all" button.
 ![connect_all](resources/connect_all.png)
 
 In this mode, the application will try to reconnect every 5 seconds when a connection is dropped.
+
+## Blinking
+When needed, you can set up blink time and blinking interval values. When set up, it will use blink interval to switch between `quiet` and `blinking`.
+If the user talks or is muted, nothing will happen.
+
+![blinking](resources/blinking.png)
 
 ## WebUI Settings
 This page allows you to change the host and port of the web UI. When clicking on Update, the UI will restart, and after 2 seconds,
@@ -47,6 +53,7 @@ Under this scene you can set up the following sources:
  - [[ANYTHING]-muted](#muted)
  - [[ANYTHING]-speaking](#speaking)
  - [[ANYTHING]-quiet](#quiet)
+ - [[ANYThING]-blinking](#blinking)
 
 Where `[ANYTHING]-` is filtered out so you can have multiple scenes set up for multiple users. For ease of use, `[USERNAME]` is recommended.
 
@@ -60,6 +67,9 @@ This image will be shown, when the user speaks.
 
 ### quiet
 This image will be shown, when the user is quiet.
+
+### blinking
+This image will be shown, when the user is quiet and blinking is enabled.
 
 When connected you will be able to click on the "CONNECTED" marker to open a diagnostic page for the connection with basic information.
 

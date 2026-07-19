@@ -38,13 +38,13 @@ class Database(DBManager):
                 version = Version(0, 0, 4)
             if version == Version(0, 0, 4):
                 await self.db.execute(
-                    """ALTER TABLE settings ADD COLUMN low_blink_interval INTEGER DEFAULT 0;"""
+                    """ALTER TABLE settings ADD COLUMN low_blink_interval INTEGER DEFAULT 1000;"""
                 )
                 await self.db.execute(
-                    """ALTER TABLE settings ADD COLUMN high_blink_interval INTEGER DEFAULT 0;"""
+                    """ALTER TABLE settings ADD COLUMN high_blink_interval INTEGER DEFAULT 3000;"""
                 )
                 await self.db.execute(
-                    """ALTER TABLE settings ADD COLUMN blink_time INTEGER DEFAULT 0;"""
+                    """ALTER TABLE settings ADD COLUMN blink_time INTEGER DEFAULT 150;"""
                 )
                 await self.db.execute(
                     """ALTER TABLE settings ADD COLUMN blink_enabled INTEGER DEFAULT 0;"""
@@ -61,11 +61,11 @@ class Database(DBManager):
         await self.db.execute(
             f"""
             CREATE TABLE IF NOT EXISTS settings (
-                teamspeak_ip TEXT NOT NULL,
-                teamspeak_port INTEGER NOT NULL UNIQUE,
+                teamspeak_ip TEXT NOT NULL UNIQUE,
+                teamspeak_port INTEGER NOT NULL,
                 teamspeak_api TEXT NOT NULL,
-                obs_ip TEXT NOT NULL,
-                obs_port INTEGER NOT NULL UNIQUE,
+                obs_ip TEXT NOT NULL UNIQUE,
+                obs_port INTEGER NOT NULL,
                 obs_password TEXT NOT NULL,
                 autoconnect INTEGER DEFAULT 0,
                 host TEXT DEFAULT '127.0.0.1',

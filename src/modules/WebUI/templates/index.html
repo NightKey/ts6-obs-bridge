@@ -106,24 +106,24 @@
                             </label>
                         </div>
                     </div>
-                    <div class="form-group">
+                    <div id="blinking-single-slider" class="form-group">
                         <div class="slider-header">
                             <label for="blink_time">Blink Time</label>
                             <span id="blink_time_val" class="slider-badge">1000ms</span>
                         </div>
                         <div class="slider-track-container">
-                            <input type="range" id="blink_time" name="blink_time" min="10" max="1000" step="10" value="1000" class="custom-slider">
+                            <input type="range" id="blink_time" name="blink_time" min="10" max="1000" step="10" value="100" class="custom-slider">
                         </div>
                     </div>
-                    <div class="form-group">
+                    <div id="blinking-dual-slider" class="form-group">
                         <div class="slider-header">
                             <label>Blinking Interval</label>
                             <span id="blink_interval_val" class="slider-badge">1.0s - 3.0s</span>
                         </div>
                         <div class="range-slider-container">
                             <div class="range-slider-track" id="rangeTrack"></div>
-                            <input type="range" id="low_blink_interval" name="low_blink_interval" min="100" max="5000" step="50" value="1000" class="range-input">
-                            <input type="range" id="high_blink_interval" name="high_blink_interval" min="100" max="5000" step="50" value="3000" class="range-input">
+                            <input type="range" id="low_blink_interval" name="low_blink_interval" min="100" max="10000" step="50" value="1000" class="range-input">
+                            <input type="range" id="high_blink_interval" name="high_blink_interval" min="100" max="10000" step="50" value="5000" class="range-input">
                         </div>
                     </div>
                 </div>

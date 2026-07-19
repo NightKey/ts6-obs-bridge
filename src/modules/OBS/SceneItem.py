@@ -12,7 +12,7 @@ class SceneItem:
     itemName: str
     enabled: bool
     enable_change: datetime = field(default_factory=datetime.now)
-    sub_items: Dict[UserStatus, 'SceneItem'] = field(default_factory=list)
+    sub_items: Dict[UserStatus, 'SceneItem'] = field(default_factory=dict)
 
     def add_sub_item(self, key: UserStatus, sub_item: 'SceneItem') -> None:
         self.sub_items[key] = sub_item

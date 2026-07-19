@@ -63,8 +63,21 @@ async function loadSettings() {
         if (data[fieldId] === null) {
             missingCount++;
         }
-        if (input && data[fieldId] !== undefined) {
+        if (input && data[fieldId] !== undefined && data[fieldId] !== null) {
             input.value = data[fieldId];
+        } else if (input) {
+            switch (fieldId) {
+                case 'blink_time':
+                    input.value = 150;
+                    break;
+                case 'low_blink_interval':
+                    input.value = 1000;
+                    break;
+                case 'high_blink_interval':
+                    input.value = 3000;
+                    break;
+                default: break;
+            }
         }
     });
 
@@ -89,6 +102,7 @@ async function loadSettings() {
     const blinkingEnabledInput = document.getElementById('blinking_enabled');
     if (blinkingEnabledInput && data['blink_enabled'] !== undefined) {
         blinkingEnabledInput.checked = !!data['blink_enabled'];
+        hideOrShowBlinkingSliders(!data['blink_enabled']);
     }
 }
 
@@ -262,6 +276,22 @@ async function toggleBlinking() {
         },
         body: JSON.stringify({ "value": toggle.checked })
     });
+
+    hideOrShowBlinkingSliders(!toggle.checked);
+}
+
+function hideOrShowBlinkingSliders(hide) {
+    const singleSlider = document.getElementById("blinking-single-slider");
+    const dualSlider = document.getElementById("blinking-dual-slider");
+    if (!singleSlider || !dualSlider) return;
+
+    if (hide) {
+        singleSlider.classList.add("hidden");
+        dualSlider.classList.add("hidden");
+    } else {
+        singleSlider.classList.remove("hidden");
+        dualSlider.classList.remove("hidden");
+    }
 }
 
 // Toggle button visibilities depending on autoconnect state

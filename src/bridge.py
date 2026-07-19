@@ -219,9 +219,13 @@ class Bridge:
             self.settings = data
             if reconnect_obs and self.obs_connector.is_connected:
                 self.obs_connector.close()
+                while self.obs_connector.is_connected:
+                    await sleep(0.3)
                 await self.connect_to_obs()
             if reconnect_teamspeak and self.team_speak_6_connector.is_connected:
                 self.team_speak_6_connector.close()
+                while self.team_speak_6_connector.is_connected:
+                    await sleep(0.3)
                 await self.connect_to_teamspeak()
 
     async def user_state_changed(self, user: str, target_state: UserStatus) -> None:
