@@ -53,7 +53,7 @@ Under this scene you can set up the following sources:
  - [[ANYTHING]-muted](#muted)
  - [[ANYTHING]-speaking](#speaking)
  - [[ANYTHING]-quiet](#quiet)
- - [[ANYThING]-blinking](#blinking)
+ - [[ANYThING]-[muted/speaking/quiet]-blinking](#blinking)
 
 Where `[ANYTHING]-` is filtered out so you can have multiple scenes set up for multiple users. For ease of use, `[USERNAME]` is recommended.
 
@@ -69,7 +69,7 @@ This image will be shown, when the user speaks.
 This image will be shown, when the user is quiet.
 
 ### blinking
-This image will be shown, when the user is quiet and blinking is enabled.
+This image will be shown, when blinking is enabled. It is not required to have a blinking version for all states.
 
 When connected you will be able to click on the "CONNECTED" marker to open a diagnostic page for the connection with basic information.
 

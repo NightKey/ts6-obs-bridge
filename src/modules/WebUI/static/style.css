@@ -622,23 +622,20 @@ input:checked + .slider:before {
 /* ==========================================================================
    4. STATS-DRIVEN MODIFIERS & STATES (Green / Red / Highlights Mapping)
    ========================================================================== */
-.voice-widget-theme .user-item.status-quiet .avatar { border-color: var(--color-main-light); color: var(--color-main-light); }
-.voice-widget-theme .user-item.status-quiet .status-badge { background-color: rgba(90, 101, 133, 0.15); color: var(--color-main-light); }
-
 /* Speaking / Active (Green Status Marker) */
-.voice-widget-theme .user-item.status-speaking { background-color: rgba(46, 204, 113, 0.06); border-color: rgba(46, 204, 113, 0.15); }
-.voice-widget-theme .user-item.status-speaking .avatar { border-color: var(--status-green); color: var(--status-green); background-color: rgba(46, 204, 113, 0.1); }
-.voice-widget-theme .user-item.status-speaking .status-badge { background-color: rgba(46, 204, 113, 0.15); color: var(--status-green); }
-.voice-widget-theme .user-item.status-speaking .user-name { color: #ffffff; }
+.voice-widget-theme .user-item.status-present { background-color: rgba(46, 204, 113, 0.06); border-color: rgba(46, 204, 113, 0.15); }
+.voice-widget-theme .user-item.status-present .avatar { border-color: var(--status-green); color: var(--status-green); background-color: rgba(46, 204, 113, 0.1); }
+.voice-widget-theme .user-item.status-present .status-badge { background-color: rgba(46, 204, 113, 0.15); color: var(--status-green); break-before: always; }
+.voice-widget-theme .user-item.status-present .user-name { color: #ffffff; }
 
 /* Muted / Suspended (Red Status Marker + Highlight Palette Color) */
 .voice-widget-theme .user-item.status-muted .avatar { border-color: var(--status-red); color: var(--status-red); }
-.voice-widget-theme .user-item.status-muted .status-badge { background-color: var(--color-highlight); color: #ffffff; }
+.voice-widget-theme .user-item.status-muted .status-badge { background-color: var(--color-highlight); color: #ffffff; break-before: always; }
 
 /* Left Channel (Muted Special Dark Tones) */
 .voice-widget-theme .user-item.status-left { opacity: 0.45; }
 .voice-widget-theme .user-item.status-left .avatar { border-color: var(--color-special-dark); color: var(--color-special-dark); }
-.voice-widget-theme .user-item.status-left .status-badge { background-color: rgba(105, 81, 99, 0.2); color: var(--color-special-light); }
+.voice-widget-theme .user-item.status-left .status-badge { background-color: rgba(105, 81, 99, 0.2); color: var(--color-special-light); break-before: always; }
 
 /* ==========================================================================
    5. OBS NESTED METADATA EXTENSIONS

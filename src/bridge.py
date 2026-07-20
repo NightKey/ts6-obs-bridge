@@ -48,7 +48,7 @@ class Bridge:
         self.obs_connector = OBSConnector(
             logger=Logger(
                 log_to_console=True,
-                use_caller_name=True,
+                use_caller_name=False,
                 use_file_names=True,
                 use_log_name=True,
                 level=LEVEL.from_string(LEVELS["obs"]["level"]),

@@ -1,6 +1,6 @@
 const endpoint = '/get_obs_scenes';
 const reinitEndpoint = '/reinit_obs'
-const pollInterval = 2000; // Polls every 2 seconds
+const pollInterval = 500;
 
 async function fetchObsData() {
     try {
@@ -62,8 +62,8 @@ function renderScenes(scenes) {
 
     listContainer.innerHTML = scenes.map((scene, index) => {
         // Map native profile states to our namespaced theme variations
-        const statusClass = scene.present ? 'status-speaking' : 'status-quiet';
-        const badgeText = scene.present ? 'Live' : 'Inactive';
+        let statusClass = scene.present ? 'status-present' : 'status-left';
+        const badgeText = scene.present ? 'Present' : 'Inactive';
 
         // Incremental numbering string inside the avatar container
         const marker = String(index + 1).padStart(2, '0');
@@ -72,10 +72,19 @@ function renderScenes(scenes) {
         const sourcesHTML = (scene.all && scene.all.length > 0)
             ? `<div class="scene-sources">
                     ${scene.all.map(source => {
+                        const sourceItems = source.subItems.map(subItem => {
+                            const subItemStyle = subItem.enabled
+                                ? ''
+                                : 'style="opacity: 0.4; border-style: dashed;"';
+                            return `<span class="source-tag" ${subItemStyle}>${escapeHTML(source.name)}-${escapeHTML(subItem.name)}</span>`;
+                        }).join('');
                         const sourceStyle = source.enabled
                             ? ''
                             : 'style="opacity: 0.4; border-style: dashed;"';
-                        return `<span class="source-tag" ${sourceStyle}>${escapeHTML(source.name)}</span>`;
+                        if (source.enabled && source.name === "muted") {
+                            statusClass = "status-muted";
+                        }
+                        return `<span class="source-tag" ${sourceStyle}>${escapeHTML(source.name)}</span> ${sourceItems}`;
                     }).join('')}
                 </div>`
             : '<div class="scene-sources"><span class="source-tag" style="font-style: italic;">No sources</span></div>';
@@ -89,6 +98,7 @@ function renderScenes(scenes) {
                         ${sourcesHTML}
                     </div>
                 </div>
+                ${scene.blinking ? '<span class="status-badge">👁</span>': ''}
                 <span class="status-badge">${badgeText}</span>
             </li>
         `;
