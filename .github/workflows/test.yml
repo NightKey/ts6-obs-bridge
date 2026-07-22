@@ -1,6 +1,9 @@
 name: Test Cross-Platform Releases
 
-on: push
+on:
+  push:
+    tags-ignore:
+      - '**'
 
 jobs:
   compile-and-publish:
