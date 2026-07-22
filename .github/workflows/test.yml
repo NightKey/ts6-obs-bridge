@@ -2,9 +2,8 @@ name: Test Cross-Platform Releases
 
 on:
   push:
-    tags-ignore:
-      - '*-Stable'
-      - '*-Beta'
+    branches:
+      - 'master'
 
 jobs:
   compile-and-publish:
