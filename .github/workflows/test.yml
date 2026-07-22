@@ -3,7 +3,8 @@ name: Test Cross-Platform Releases
 on:
   push:
     tags-ignore:
-      - '**'
+      - '*-Stable'
+      - '*-Beta'
 
 jobs:
   compile-and-publish:
