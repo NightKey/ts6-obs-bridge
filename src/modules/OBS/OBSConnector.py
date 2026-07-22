@@ -270,13 +270,18 @@ class OBSConnector(BaseConnector):
             requests.append(sub_item.get_request(scene.itemName, self.request_id).to_request_dict())
             status = UserStatus(subitem_name)
             if status == UserStatus.Blinking:
-                parent_status = UserStatus(item["sourceName"].split('-')[-2])
-                if parent_status not in scene.sub_items.keys():
-                    temp_statuses[parent_status] = sub_item
-                else:
-                    scene.sub_items[parent_status].add_sub_item(status, sub_item)
-                    self.logger.debug(f"Scene subitem added to {scene.sub_items[parent_status].itemName}: {sub_item.itemName}")
-                continue
+                parent_string = item["sourceName"].split('-')[-2]
+                try:
+                    parent_status = UserStatus.from_string(parent_string)
+                    if parent_status not in scene.sub_items.keys():
+                        temp_statuses[parent_status] = sub_item
+                    else:
+                        scene.sub_items[parent_status].add_sub_item(status, sub_item)
+                        self.logger.debug(f"Scene subitem added to {scene.sub_items[parent_status].itemName}: {sub_item.itemName}")
+                    continue
+                except NotImplemented:
+                    self.logger.error(f"Scene name was incorrect: {item['sourceName']}. `{parent_string}` is not a valid state.")
+                    continue
             scene.add_sub_item(status, sub_item)
         for key, value in temp_statuses.items():
             scene.sub_items[key].add_sub_item(UserStatus(value.itemName), value)

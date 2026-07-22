@@ -72,19 +72,26 @@ function renderScenes(scenes) {
         const sourcesHTML = (scene.all && scene.all.length > 0)
             ? `<div class="scene-sources">
                     ${scene.all.map(source => {
+                        let hasBlinking = false;
+                        let enabledOverride = false;
                         const sourceItems = source.subItems.map(subItem => {
-                            const subItemStyle = subItem.enabled
-                                ? ''
-                                : 'style="opacity: 0.4; border-style: dashed;"';
-                            return `<span class="source-tag" ${subItemStyle}>${escapeHTML(source.name)}-${escapeHTML(subItem.name)}</span>`;
+                            if (subItem.name === "blinking") {
+                                hasBlinking = true;
+                                enabledOverride = subItem.enabled;
+                            } else {
+                                const subItemStyle = subItem.enabled
+                                    ? ''
+                                    : 'style="opacity: 0.4; border-style: dashed;"';
+                                return `<span class="source-tag" ${subItemStyle}>${escapeHTML(source.name)}-${escapeHTML(subItem.name)}</span>`;
+                            }
                         }).join('');
-                        const sourceStyle = source.enabled
+                        const sourceStyle = source.enabled || enabledOverride
                             ? ''
                             : 'style="opacity: 0.4; border-style: dashed;"';
                         if (source.enabled && source.name === "muted") {
                             statusClass = "status-muted";
                         }
-                        return `<span class="source-tag" ${sourceStyle}>${escapeHTML(source.name)}</span> ${sourceItems}`;
+                        return `<span class="source-tag" ${sourceStyle}>${escapeHTML(source.name)}${hasBlinking ? ' ︶' : ''}</span> ${sourceItems}`;
                     }).join('')}
                 </div>`
             : '<div class="scene-sources"><span class="source-tag" style="font-style: italic;">No sources</span></div>';
@@ -92,9 +99,10 @@ function renderScenes(scenes) {
         return `
             <li class="user-item ${statusClass}">
                 <div class="user-info" style="width: 75%;">
-                    <div class="avatar">${marker}</div>
-                    <div class="user-details">
+                    <div class="avatar">
                         <span class="user-name">${escapeHTML(scene.name)}</span>
+                    </div>
+                    <div class="user-details">
                         ${sourcesHTML}
                     </div>
                 </div>
