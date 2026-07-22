@@ -53,6 +53,12 @@ echo "Copying WebUI assets"
 cp -r "src/modules/WebUI/static" "dist/TeamSpeak-OBS-Bridge-App/_internal/modules/WebUI/static"
 cp -r "src/modules/WebUI/templates" "dist/TeamSpeak-OBS-Bridge-App/_internal/modules/WebUI/templates"
 
+echo "Converting to pdf"
+pandoc README.md -o dist/readme.pdf --pdf-engine=weasyprint
+
+echo "Copying pdf"
+cp "dist/readme.pdf" "dist/TeamSpeak-OBS-Bridge-App/readme.pdf"
+
 echo "Creating tar.gz file"
 tar -czvf "dist/TeamSpeak-OBS-Bridge-App-Linux.tar.gz" "dist/TeamSpeak-OBS-Bridge-App"
 echo "Done"

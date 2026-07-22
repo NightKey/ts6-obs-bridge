@@ -70,6 +70,9 @@ echo "Copying WebUI assets"
 robocopy "src\modules\WebUI\static" "dist\TeamSpeak-OBS-Bridge-App\_internal\modules\WebUI\static" /e /copy:DAT /r:0
 robocopy "src\modules\WebUI\templates" "dist\TeamSpeak-OBS-Bridge-App\_internal\modules\WebUI\templates" /e /copy:DAT /r:0
 
+echo "Copying readme pdf"
+copy "dist\readme.pdf" "dist\TeamSpeak-OBS-Bridge-App\readme.pdf"
+
 echo "Creating zip file"
 cd dist
 tar -a -cvf "TeamSpeak-OBS-Bridge-App-Windows.zip" "TeamSpeak-OBS-Bridge-App" || exit /b 1

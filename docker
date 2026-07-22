@@ -1,6 +1,6 @@
 FROM python:3.14-slim
 # Install system dependencies needed for compilation & tar compression
-RUN apt-get update && apt-get install -y binutils tar dos2unix && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y binutils tar dos2unix pandoc weasyprint && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY . .
 # Execute the shell script passing the version tag provided by the build argument

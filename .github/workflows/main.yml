@@ -23,11 +23,6 @@ jobs:
       run: |
         call .\run_tests.bat
 
-    - name: Build Windows Executable
-      shell: cmd
-      run: |
-        call .\create_executable.bat ${{ github.ref_name }}
-
     - name: Build Linux Executable
       shell: cmd
       run: |
@@ -35,7 +30,13 @@ jobs:
         docker create --name temp_linux ts-obs-linux
         if not exist dist mkdir dist
         docker cp temp_linux:/app/dist/TeamSpeak-OBS-Bridge-App-Linux.tar.gz ./dist/TeamSpeak-OBS-Bridge-App-Linux.tar.gz
+        docker cp temp_linux:/app/dist/readme.pdf ./dist/readme.pdf
         docker rm temp_linux
+
+    - name: Build Windows Executable
+      shell: cmd
+      run: |
+        call .\create_executable.bat ${{ github.ref_name }}
 
     - name: Publish to GitHub Releases
       uses: softprops/action-gh-release@v2
