@@ -6,7 +6,7 @@ async function fetchObsData() {
     try {
         const response = await fetch(endpoint);
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            throw response;
         }
 
         // Unpack the new response object layout
@@ -15,14 +15,19 @@ async function fetchObsData() {
         updateMessageQueue(data.message_queue);
         setSyncIndicator(data.connected);
         renderScenes(data.scenes);
-    } catch (error) {
-        console.error("Failed to fetch OBS data:", error);
+    } catch (response) {
+        console.error("Failed to fetch OBS data:", response.status);
+        setSyncIndicator(false);
         const syncIndicator = document.getElementById('live-indicator');
         syncIndicator.classList.remove("connected", "disconnected")
         syncIndicator.classList.add("failed")
+        let message = "Failed to load OBS scenes. Retrying..."
+        if (response.status === 503) {
+            message = response.statusText
+        }
         document.getElementById('sceneList').innerHTML = `
-            <div class="empty-state" style="color: var(--status-red);">
-                Failed to load OBS scenes. Retrying...
+            <div class="empty-state">
+                ${message}
             </div>`;
     }
 }
@@ -50,6 +55,7 @@ function setSyncIndicator(connected) {
     syncIndicator.classList.remove("connected", "disconnected", "failed");
     syncIndicator.classList.remove("connected");
     syncIndicator.classList.add(connected ? "connected" : "disconnected");
+    syncIndicator.innerText = connected ? "connected" : "disconnected";
 }
 
 function renderScenes(scenes) {

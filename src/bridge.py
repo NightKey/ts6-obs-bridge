@@ -6,8 +6,10 @@ from typing import Tuple
 from os import path
 import time
 import atexit
+from platform import system
 
 from smdb_logger import Logger, LEVEL
+from smdb_web_server import KnownError
 
 from modules import Settings, UserStatus, WebUI, Database, OBSConnector, TeamSpeak6Connector, OBSException, \
     TeamSpeakException, show_open_calls
@@ -263,9 +265,13 @@ class Bridge:
         self.logger.debug("All processes closed!")
 
     def get_ts_user_map(self) -> dict:
+        if not self.team_speak_6_connector.is_connected:
+            raise KnownError("TeamSpeak not connected", 503)
         return self.team_speak_6_connector.get_user_map()
 
     def get_obs_scene_map(self) -> dict:
+        if not self.obs_connector.is_connected:
+            raise KnownError("OBS not connected", 503)
         return self.obs_connector.get_scene_map()
 
 if __name__=="__main__":
@@ -287,7 +293,8 @@ if __name__=="__main__":
         log_folder=LOG_FOLDER,
         level_only_valid_for_console=True,
         max_logfile_lifetime=2,
-        enable_file=LEVELS["bridge"]["create_file"]
+        enable_file=LEVELS["bridge"]["create_file"],
+        enable_color=True if system() != "Windows" else False, # Windows does not always support colors.
     )
     bridge_logger.info(f"Starting application version {'-'.join(VERSION.split('\n'))}")
     bridge = Bridge(bridge_logger, VERSION)

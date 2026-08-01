@@ -429,7 +429,7 @@ input:checked + .slider:before {
 
 .voice-widget-theme .container {
     width: 100%;
-    max-width: 480px;
+    max-width: 500px;
     background-color: rgba(90, 101, 133, 0.1);
     backdrop-filter: blur(12px);
     border: 1px solid var(--border-subtle);
@@ -556,10 +556,10 @@ input:checked + .slider:before {
     white-space: nowrap;
 }
 
-.voice-widget-theme .empty-state {
+.empty-state {
     padding: 3rem 1.5rem;
     text-align: center;
-    color: var(--text-muted);
+    color: var(--status-red);
     font-size: 0.9rem;
 }
 
