@@ -34,7 +34,7 @@ call python -m pip install pyinstaller
 
 echo "Building executable"
 pyinstaller -n "TeamSpeak-OBS-Bridge-App" -D src\bridge.py --paths=.\modules || exit /b 1
-pyinstaller -n -w "TeamSpeak-OBS-Bridge-App-Headless" -D src\bridge.py --paths=.\modules || exit /b 1
+pyinstaller -w -n "TeamSpeak-OBS-Bridge-App-Headless" -D src\bridge.py --paths=.\modules || exit /b 1
 
 echo "Creating levels file"
 mkdir "dist\TeamSpeak-OBS-Bridge-App\data" || exit /b 1
