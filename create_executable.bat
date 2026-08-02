@@ -67,19 +67,19 @@ copy "dist\TeamSpeak-OBS-Bridge-App\data\version" "dist\TeamSpeak-OBS-Bridge-App
 
 echo "Creating WebUI folders"
 mkdir "dist\TeamSpeak-OBS-Bridge-App\_internal\modules\WebUI\static" || exit /b 1
-mkdir "dist\TeamSpeak-OBS-Bridge-App\_internal\modules\WebUI\static" || exit /b 1
+mkdir "dist\TeamSpeak-OBS-Bridge-App-Headless\_internal\modules\WebUI\static" || exit /b 1
 mkdir "dist\TeamSpeak-OBS-Bridge-App\_internal\modules\WebUI\templates" || exit /b 1
-mkdir "dist\TeamSpeak-OBS-Bridge-App\_internal\modules\WebUI\templates" || exit /b 1
+mkdir "dist\TeamSpeak-OBS-Bridge-App-Headless\_internal\modules\WebUI\templates" || exit /b 1
 
 echo "Copying WebUI assets"
 robocopy "src\modules\WebUI\static" "dist\TeamSpeak-OBS-Bridge-App\_internal\modules\WebUI\static" /e /copy:DAT /r:0
-robocopy "src\modules\WebUI\static" "dist\TeamSpeak-OBS-Bridge-App\_internal\modules\WebUI\static" /e /copy:DAT /r:0
+robocopy "src\modules\WebUI\static" "dist\TeamSpeak-OBS-Bridge-App-Headless\_internal\modules\WebUI\static" /e /copy:DAT /r:0
 robocopy "src\modules\WebUI\templates" "dist\TeamSpeak-OBS-Bridge-App\_internal\modules\WebUI\templates" /e /copy:DAT /r:0
-robocopy "src\modules\WebUI\templates" "dist\TeamSpeak-OBS-Bridge-App\_internal\modules\WebUI\templates" /e /copy:DAT /r:0
+robocopy "src\modules\WebUI\templates" "dist\TeamSpeak-OBS-Bridge-App-Headless\_internal\modules\WebUI\templates" /e /copy:DAT /r:0
 
 echo "Copying readme pdf"
 copy "dist\readme.pdf" "dist\TeamSpeak-OBS-Bridge-App\readme.pdf"
-copy "dist\readme.pdf" "dist\TeamSpeak-OBS-Bridge-App\readme.pdf"
+copy "dist\readme.pdf" "dist\TeamSpeak-OBS-Bridge-App-Headless\readme.pdf"
 
 echo "Creating zip file"
 cd dist
