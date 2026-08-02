@@ -17,8 +17,8 @@ pip install -r dependencies.txt --upgrade
 pip install pyinstaller
 
 echo "Building executable"
-pyinstaller -n "TeamSpeak-OBS-Bridge-App" -D src/bridge.py --paths=./modules
-pyinstaller -w -n "TeamSpeak-OBS-Bridge-App-Headless" -D src/bridge.py --paths=./modules
+pyinstaller -y -n "TeamSpeak-OBS-Bridge-App" -D src/bridge.py --paths=./modules
+pyinstaller -y -w -n "TeamSpeak-OBS-Bridge-App-Headless" -D src/bridge.py --paths=./modules
 
 echo "Creating levels file"
 mkdir "dist/TeamSpeak-OBS-Bridge-App/data"
