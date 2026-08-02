@@ -40,7 +40,8 @@ class Bridge:
                     log_folder=LOG_FOLDER,
                     level_only_valid_for_console=True,
                     max_logfile_lifetime=2,
-                    enable_file=LEVELS["database"]["create_file"]
+                    enable_file=LEVELS["database"]["create_file"],
+                    enable_color=not windows
                 ),
                 data_path=DATA_FOLDER
             )
@@ -58,7 +59,8 @@ class Bridge:
                 log_folder=LOG_FOLDER,
                 level_only_valid_for_console=True,
                 max_logfile_lifetime=2,
-                enable_file=LEVELS["obs"]["create_file"]
+                enable_file=LEVELS["obs"]["create_file"],
+                enable_color=not windows
             )
         )
         self.team_speak_6_connector = TeamSpeak6Connector(
@@ -72,7 +74,8 @@ class Bridge:
                 log_folder=LOG_FOLDER,
                 level_only_valid_for_console=True,
                 max_logfile_lifetime=2,
-                enable_file=LEVELS["teamspeak"]["create_file"]
+                enable_file=LEVELS["teamspeak"]["create_file"],
+                enable_color=not windows
             ),
             version=self.version,
             user_status_changed_callback=self.user_state_changed,
@@ -91,7 +94,8 @@ class Bridge:
                 log_folder=LOG_FOLDER,
                 level_only_valid_for_console=True,
                 max_logfile_lifetime=2,
-                enable_file=LEVELS["webui"]["create_file"]
+                enable_file=LEVELS["webui"]["create_file"],
+                enable_color=not windows
             ),
             get_settings_callback=self.get_settings,
             update_settings_callback=self.update_settings,
@@ -283,6 +287,7 @@ if __name__=="__main__":
     fp = open(path.join(DATA_FOLDER, 'version'), 'r')
     VERSION = fp.read()
     fp.close()
+    windows = system() == "Windows"  # Windows does not always support colors.
 
     bridge_logger = Logger(
         log_to_console=True,
@@ -294,7 +299,7 @@ if __name__=="__main__":
         level_only_valid_for_console=True,
         max_logfile_lifetime=2,
         enable_file=LEVELS["bridge"]["create_file"],
-        enable_color=True if system() != "Windows" else False, # Windows does not always support colors.
+        enable_color=not windows
     )
     bridge_logger.info(f"Starting application version {'-'.join(VERSION.split('\n'))}")
     bridge = Bridge(bridge_logger, VERSION)
