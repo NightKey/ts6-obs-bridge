@@ -45,10 +45,10 @@ echo "{
         \"create_file\": false
     }
 }" > dist/TeamSpeak-OBS-Bridge-App/data/log_settings
-cp "dist/TeamSpeak-OBS-Bridge-App/data/log_settings" "dis/TeamSpeak-OBS-Bridge-App-Headless/data/log_settings"
+cp "dist/TeamSpeak-OBS-Bridge-App/data/log_settings" "dist/TeamSpeak-OBS-Bridge-App-Headless/data/log_settings"
 echo "$VERSION
 $BRANCH" > "dist/TeamSpeak-OBS-Bridge-App/data/version"
-cp "dist/TeamSpeak-OBS-Bridge-App/data/version" "dis/TeamSpeak-OBS-Bridge-App-Headless/data/version"
+cp "dist/TeamSpeak-OBS-Bridge-App/data/version" "dist/TeamSpeak-OBS-Bridge-App-Headless/data/version"
 
 echo "Creating WebUI folders"
 mkdir -p "./dist/TeamSpeak-OBS-Bridge-App/_internal/modules/WebUI"
