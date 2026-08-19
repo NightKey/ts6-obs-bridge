@@ -19,6 +19,7 @@ class TeamSpeak6Connector(BaseConnector):
     stop_event: Event = Event()
     stopped: Event = Event()
     user_client_info_map: Dict[int, ClientInfo] = {}
+    user_mute_behavior: bool
     version: str
 
     @property
@@ -49,7 +50,8 @@ class TeamSpeak6Connector(BaseConnector):
     def evaluate_client_info(self, client_info: ClientInfo | None, user_channel: int | None = None) -> UserStatus | None:
         if client_info is None or client_info.name is None: return None
         if user_channel is None: user_channel = self.user.channel_id
-        if client_info.is_muted or user_channel != client_info.channel_id: return UserStatus.Left
+        if client_info.is_muted: return UserStatus.Left if self.user_mute_behavior else UserStatus.Muted
+        if user_channel != client_info.channel_id: return UserStatus.Left
         if client_info.is_muted_by_user: return UserStatus.Muted
         if client_info.is_talking: return UserStatus.Speaking
         return UserStatus.Quiet
@@ -82,6 +84,7 @@ class TeamSpeak6Connector(BaseConnector):
     @async_wrapped
     async def connect(self, settings: TeamSpeakSettings) -> bool:
         self.stop_event.clear()
+        self.user_mute_behavior = settings.user_mute_behavior
         self.logger.info("Connecting ot teamspeak")
         auth_request = {
             "type": "auth",
@@ -278,4 +281,4 @@ class TeamSpeak6Connector(BaseConnector):
         await self.user_deafened_changed_callback(status)
 
     def get_user_map(self) -> dict:
-        return {"connected": self.is_connected, "users": [{"id":x.id, "name":x.name, "status":self.evaluate_client_info(x).value} for x in self.user_client_info_map.values()]}
+        return {"connected": self.is_connected, "users": [{"id":x.id, "name":x.name, "status":self.evaluate_client_info(x).name if x.name is not None else None} for x in self.user_client_info_map.values()]}

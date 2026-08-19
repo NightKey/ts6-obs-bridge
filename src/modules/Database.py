@@ -6,13 +6,14 @@ from . import Settings, TeamSpeakSettings, OBSSettings
 class Database(DBManager):
     @property
     def current_version(self) -> Version:
-        return Version(0, 0, 5)
+        return Version(0, 0, 6)
 
     @DBManager.async_database_safe
     @DBManager.async_during_init
     @DBManager.async_timed
     @DBManager.fail_with_exception
     async def migrate_db(self, current: Version, target: Version) -> bool:
+        if self.db is None: raise Exception("Database not initialized")
         version = current
         while version != target:
             if version ==  Version(0, 0, 1):
@@ -51,6 +52,12 @@ class Database(DBManager):
                 )
                 await self.db.commit()
                 version = Version(0, 0, 5)
+            if version == Version(0, 0, 5):
+                await self.db.execute(
+                    """ALTER TABLE settings ADD COLUMN user_mute_behavior INTEGER DEFAULT 1;"""
+                )
+                await self.db.commit()
+                version = Version(0, 0, 6)
         return True
 
     @DBManager.async_database_safe
@@ -73,7 +80,8 @@ class Database(DBManager):
                 low_blink_interval INTEGER DEFAULT 0,
                 high_blink_interval INTEGER DEFAULT 0,
                 blink_time INTEGER DEFAULT 0,
-                blink_enabled INTEGER DEFAULT 0
+                blink_enabled INTEGER DEFAULT 0,
+                user_mute_behavior INTEGER DEFAULT 1
             ) STRICT;
             """
         )
@@ -84,7 +92,7 @@ class Database(DBManager):
     @DBManager.async_timed
     async def get_settings(self) -> Settings | None:
         result = await self.db.execute_fetchall(
-            f"""SELECT teamspeak_ip, teamspeak_port, teamspeak_api, obs_ip, obs_port, obs_password, low_blink_interval, high_blink_interval, blink_time, blink_enabled, autoconnect, host, port FROM settings"""
+            f"""SELECT teamspeak_ip, teamspeak_port, teamspeak_api, user_mute_behavior, obs_ip, obs_port, obs_password, low_blink_interval, high_blink_interval, blink_time, blink_enabled, autoconnect, host, port FROM settings"""
         )
         if len(result) == 0:
             self.logger.warning("No settings found")
@@ -93,23 +101,24 @@ class Database(DBManager):
         teamspeak_settings = TeamSpeakSettings(
             ip=settings[0],
             port=settings[1],
-            api=settings[2]
+            api=settings[2],
+            user_mute_behavior=settings[3]
         )
         obs_settings = OBSSettings(
-            ip=settings[3],
-            port=settings[4],
-            password=settings[5],
-            low_blink_interval=settings[6],
-            high_blink_interval=settings[7],
-            blink_time=settings[8],
-            blink_enabled=settings[9]
+            ip=settings[4],
+            port=settings[5],
+            password=settings[6],
+            low_blink_interval=settings[7],
+            high_blink_interval=settings[8],
+            blink_time=settings[9],
+            blink_enabled=settings[10]
         )
         return Settings(
             teamspeak=teamspeak_settings,
             obs=obs_settings,
-            autoconnect=settings[10],
-            host=settings[11],
-            port=settings[12]
+            autoconnect=settings[11],
+            host=settings[12],
+            port=settings[13]
         )
 
     @DBManager.async_database_safe
@@ -117,13 +126,14 @@ class Database(DBManager):
     async def upsert_settings(self, settings: Settings) -> bool:
         if settings.teamspeak is None or settings.obs is None: return False
         await self.db.execute(
-            f"""INSERT OR REPLACE INTO settings (teamspeak_ip, teamspeak_port, teamspeak_api, obs_ip, obs_port, obs_password, low_blink_interval, high_blink_interval, blink_time, blink_enabled, autoconnect, host, port)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            f"""INSERT OR REPLACE INTO settings (teamspeak_ip, teamspeak_port, teamspeak_api, user_mute_behavior, obs_ip, obs_port, obs_password, low_blink_interval, high_blink_interval, blink_time, blink_enabled, autoconnect, host, port)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 settings.teamspeak.ip,
                 settings.teamspeak.port,
                 settings.teamspeak.api,
+                settings.teamspeak.user_mute_behavior,
                 settings.obs.ip,
                 settings.obs.port,
                 settings.obs.password,

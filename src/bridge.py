@@ -14,6 +14,7 @@ from smdb_web_server import KnownError
 from modules import Settings, UserStatus, WebUI, Database, OBSConnector, TeamSpeak6Connector, OBSException, \
     TeamSpeakException, show_open_calls
 
+
 class Bridge:
     settings: Settings
     logger: Logger
@@ -39,6 +40,7 @@ class Bridge:
                     log_file_name="database.log",
                     log_folder=LOG_FOLDER,
                     level_only_valid_for_console=True,
+                    max_caller_chain_size=5,
                     max_logfile_lifetime=2,
                     enable_file=LEVELS["database"]["create_file"],
                     enable_color=not windows
@@ -58,6 +60,7 @@ class Bridge:
                 log_file_name="obs.log",
                 log_folder=LOG_FOLDER,
                 level_only_valid_for_console=True,
+                max_caller_chain_size=5,
                 max_logfile_lifetime=2,
                 enable_file=LEVELS["obs"]["create_file"],
                 enable_color=not windows
@@ -73,6 +76,7 @@ class Bridge:
                 log_file_name="teamspeak.log",
                 log_folder=LOG_FOLDER,
                 level_only_valid_for_console=True,
+                max_caller_chain_size=5,
                 max_logfile_lifetime=2,
                 enable_file=LEVELS["teamspeak"]["create_file"],
                 enable_color=not windows
@@ -93,6 +97,7 @@ class Bridge:
                 log_file_name="webui.log",
                 log_folder=LOG_FOLDER,
                 level_only_valid_for_console=True,
+                max_caller_chain_size=5,
                 max_logfile_lifetime=2,
                 enable_file=LEVELS["webui"]["create_file"],
                 enable_color=not windows
@@ -110,6 +115,7 @@ class Bridge:
             toggle_autoconnect_callback=self.toggle_autoconnect,
             change_webui_settings_callback=self.change_webui_settings,
             set_blinking_callback=self.set_blinking,
+            set_user_mute_behavior_callback=self.set_user_mute_behavior,
             version=self.version,
             host=self.settings.host,
             port=self.settings.port
@@ -212,9 +218,17 @@ class Bridge:
 
     async def set_blinking(self, value: bool) -> None:
         self.logger.debug(f"Setting blinking {value}")
-        self.settings.obs.blink_enabled = value
+        settings_copy = self.settings.copy()
+        settings_copy.obs.blink_enabled = value
         self.logger.trace("Updating settings")
-        await self.update_settings(self.settings)
+        await self.update_settings(settings_copy)
+
+    async def set_user_mute_behavior(self, value: bool) -> None:
+        self.logger.debug(f"Setting user_mute_behavior {'Left' if value else 'Muted'}")
+        settings_copy = self.settings.copy()
+        settings_copy.teamspeak.user_mute_behavior = value
+        self.logger.trace("Updating settings")
+        await self.update_settings(settings_copy)
 
     async def update_settings(self, data: Settings) -> None:
         if await self.database.upsert_settings(data):
@@ -297,6 +311,7 @@ if __name__=="__main__":
         log_file_name="bridge.log",
         log_folder=LOG_FOLDER,
         level_only_valid_for_console=True,
+        max_caller_chain_size=5,
         max_logfile_lifetime=2,
         enable_file=LEVELS["bridge"]["create_file"],
         enable_color=not windows
