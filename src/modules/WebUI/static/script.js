@@ -104,6 +104,13 @@ async function loadSettings() {
         blinkingEnabledInput.checked = !!data['blink_enabled'];
         hideOrShowBlinkingSliders(!data['blink_enabled']);
     }
+
+    // Load in 'user_mute_behavior' value
+    const userMuteBehavior = document.getElementById('user_mute_behavior');
+    if (userMuteBehavior && data['user_mute_behavior'] !== undefined) {
+        userMuteBehavior.checked = data['user_mute_behavior'];
+        setMuteBehaviorText(data['user_mute_behavior']);
+    }
 }
 
 // Double slider handling & visualization rendering helper
@@ -280,17 +287,35 @@ async function toggleBlinking() {
     hideOrShowBlinkingSliders(!toggle.checked);
 }
 
+function setMuteBehaviorText(value) {
+    const infoText = document.getElementById('user_mute_behavior_text');
+    if (!infoText) return;
+    infoText.innerText = value ? "Left" : "Muted";
+}
+
+async function toggleMuteBehavior() {
+    const toggle = document.getElementById('user_mute_behavior');
+    if (!toggle) return;
+
+    setMuteBehaviorText(toggle.checked);
+
+    await apiFetch('set_user_mute_behavior', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ "value": toggle.checked })
+    });
+}
+
 function hideOrShowBlinkingSliders(hide) {
-    const singleSlider = document.getElementById("blinking-single-slider");
-    const dualSlider = document.getElementById("blinking-dual-slider");
-    if (!singleSlider || !dualSlider) return;
+    const blinkingToggleGroup = document.getElementById("blinking-toggle-group");
+    if (!blinkingToggleGroup) return;
 
     if (hide) {
-        singleSlider.classList.add("hidden");
-        dualSlider.classList.add("hidden");
+        blinkingToggleGroup.classList.add("hidden");
     } else {
-        singleSlider.classList.remove("hidden");
-        dualSlider.classList.remove("hidden");
+        blinkingToggleGroup.classList.remove("hidden");
     }
 }
 
@@ -471,4 +496,5 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     document.getElementById('autoconnect')?.addEventListener('change', toggleAutoConnect);
     document.getElementById('blinking_enabled')?.addEventListener('change', toggleBlinking);
+    document.getElementById('user_mute_behavior')?.addEventListener('change', toggleMuteBehavior);
 });

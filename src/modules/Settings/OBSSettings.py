@@ -24,5 +24,16 @@ class OBSSettings:
             self.blink_enabled != other.blink_enabled
         )
 
+    def copy(self) -> 'OBSSettings':
+        return OBSSettings(
+            ip=self.ip,
+            port=self.port,
+            password=self.password,
+            low_blink_interval=self.low_blink_interval,
+            high_blink_interval=self.high_blink_interval,
+            blink_time=self.blink_time,
+            blink_enabled=self.blink_enabled,
+        )
+
     def __str__(self):
         return f"OBS[ip: {self.ip} port: {self.port} password: {self.password} low_blink_interval: {self.low_blink_interval} high_blink_interval: {self.high_blink_interval} blink_time: {self.blink_time} blink_enabled: {self.blink_enabled}]"

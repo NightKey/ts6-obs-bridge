@@ -25,6 +25,7 @@ class WebUI:
     re_init_obs_callback: Callable[[], Coroutine[Any, Any, None]]
     change_webui_settings_callback: Callable[[str, int], Coroutine[Any, Any, None]]
     set_blinking_callback: Callable[[bool], Coroutine[Any, Any, None]]
+    set_user_mute_behavior_callback: Callable[[bool], Coroutine[Any, Any, None]]
     version: str
 
 
@@ -44,6 +45,7 @@ class WebUI:
             re_init_obs_callback: Callable[[], Coroutine[Any, Any, None]],
             change_webui_settings_callback: Callable[[str, int], Coroutine[Any, Any, None]],
             set_blinking_callback: Callable[[bool], Coroutine[Any, Any, None]],
+            set_user_mute_behavior_callback: Callable[[bool], Coroutine[Any, Any, None]],
             version: str,
             host: str,
             port: int
@@ -62,6 +64,7 @@ class WebUI:
         self.re_init_obs_callback = re_init_obs_callback
         self.change_webui_settings_callback = change_webui_settings_callback
         self.set_blinking_callback = set_blinking_callback
+        self.set_user_mute_behavior_callback = set_user_mute_behavior_callback
         self.server = HTMLServer(host=host, port=port, root_path=path.dirname(__file__), logger=logger, title="Stream Control Panel")
         self.version = version
         # Main page
@@ -69,6 +72,7 @@ class WebUI:
         self.server.add_url_rule("/update_settings", self.update_settings, Protocol.Post)
         self.server.add_url_rule("/toggle_autoconnect", self.toggle_autoconnect, Protocol.Post)
         self.server.add_url_rule("/set_blinking", self.set_blinking, Protocol.Post)
+        self.server.add_url_rule("/set_user_mute_behavior", self.set_user_mute_behavior, Protocol.Post)
         self.server.add_url_rule("/get_settings", self.get_settings, disable_cache=True)
         self.server.add_url_rule("/get_state", self.get_state, disable_cache=True)
         self.server.add_url_rule("/connect_all", self.connect_all)
@@ -110,6 +114,10 @@ class WebUI:
 
     async def set_blinking(self, url_data: UrlData) -> str:
         await self.set_blinking_callback(loads(url_data.data.decode())['value'])
+        return "{}"
+
+    async def set_user_mute_behavior(self, url_data: UrlData) -> str:
+        await self.set_user_mute_behavior_callback(loads(url_data.data.decode())['value'])
         return "{}"
 
     async def update_settings(self, url_data: UrlData) -> str:

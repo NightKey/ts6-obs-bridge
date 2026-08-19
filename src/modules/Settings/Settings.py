@@ -17,7 +17,8 @@ class Settings:
         teamspeak_settings = TeamSpeakSettings(
             ip = json["teamspeak_ip"],
             port = json["teamspeak_port"],
-            api = json["teamspeak_api"]
+            api = json["teamspeak_api"],
+            user_mute_behavior=json.get("left_when_mutes", True)
         )
         obs_settings = OBSSettings(
             ip=json["obs_ip"],
@@ -26,7 +27,7 @@ class Settings:
             low_blink_interval=json.get("low_blink_interval", 1000),
             high_blink_interval=json.get("high_blink_interval", 3000),
             blink_time=json.get("blink_time", 150),
-            blink_enabled=json.get("blink_enabled", False),
+            blink_enabled=json.get("blink_enabled", False)
         )
         return Settings(
             teamspeak=teamspeak_settings,
@@ -41,6 +42,7 @@ class Settings:
             "teamspeak_ip" : self.teamspeak.ip if self.teamspeak is not None else None,
             "teamspeak_port" : self.teamspeak.port if self.teamspeak is not None else None,
             "teamspeak_api" : self.teamspeak.api if self.teamspeak is not None else None,
+            "user_mute_behavior": self.teamspeak.user_mute_behavior if self.teamspeak is not None else True,
             "obs_ip" : self.obs.ip if self.obs is not None else None,
             "obs_port" : self.obs.port if self.obs is not None else None,
             "obs_password" : self.obs.password if self.obs is not None else None,
@@ -57,6 +59,15 @@ class Settings:
         return (
             self.teamspeak != other.teamspeak,
             self.obs != other.obs
+        )
+
+    def copy(self) -> 'Settings':
+        return Settings(
+            teamspeak=self.teamspeak.copy() if self.teamspeak is not None else None,
+            obs=self.obs.copy() if self.obs is not None else None,
+            autoconnect=self.autoconnect,
+            host=self.host,
+            port=self.port,
         )
 
     def __str__(self) -> str:

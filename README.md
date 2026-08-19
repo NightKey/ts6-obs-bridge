@@ -25,6 +25,14 @@ If the user talks or is muted, nothing will happen.
 
 ![blinking](resources/blinking.png)
 
+## User mute behavior
+With this setting, you can set how the program should handle when a user mutes themselves. 
+Two options are available:
+ - Left - The user will be treated as if they left your channel, hiding all their images.
+ - Muted - The user will be treated as if you muted them, showing the 'Muted' image if available.
+
+![usermutebehaviour](resources/teamspeak_usermutebehavior.png)
+
 ## WebUI Settings
 This page allows you to change the host and port of the web UI. When clicking on Update, the UI will restart, and after 2 seconds,
 you will be redirected to the new page.

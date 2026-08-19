@@ -32,7 +32,6 @@ jobs:
         docker build --build-arg TAG=${{ github.ref_name }} -t ts-obs-linux -f docker .
         docker create --name temp_linux ts-obs-linux
         if not exist dist mkdir dist
-        docker cp temp_linux:/app/dist/TeamSpeak-OBS-Bridge-App-Linux.tar.gz ./dist/TeamSpeak-OBS-Bridge-App-Linux.tar.gz
         docker rm temp_linux
 
     - name: Cleanup

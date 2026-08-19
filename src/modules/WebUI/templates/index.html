@@ -24,7 +24,7 @@
             </p>
             <div class="form-group">
                 <div class="switch-container">
-                    <label for="autoconnect" class="autoconnect-label">Auto-Connect on Startup</label>
+                    <label for="autoconnect" class="clickable">Auto-Connect on Startup</label>
                     <label class="switch">
                         <input type="checkbox" id="autoconnect">
                         <span class="slider"></span>
@@ -67,6 +67,20 @@
                 </div>
             </section>
 
+            <div class="config-section switch-container toggle-group clickable" id="user_mute_behavior_container">
+                <label for="user_mute_behavior" class="clickable tooltip">
+                    User mute behavior ⓘ
+                    <span class="tooltiptext">
+                        Describes what happens when a user mutes themselves.<br>
+                        • Left - The image will be disabled<br>
+                        • Muted - The "muted" image will be shown.<br>
+                        <sub>ⓘ If no "muted" image is present, the behavior will look the same.</sub>
+                    </span>
+                </label>
+                <input type="checkbox" id="user_mute_behavior" hidden="hidden">
+                <span class="clickable info" id="user_mute_behavior_text">Left</span>
+            </div>
+
             <section class="config-section">
                 <div class="section-title-container">
                     <div class="section-title">
@@ -83,7 +97,6 @@
                         <span class="status-text">Disconnected</span>
                     </div>
                 </div>
-
                 <div id="obs-form-grid" class="form-grid hidden">
                     <div class="form-group">
                         <label for="obs_ip">WebSocket IP</label>
@@ -97,15 +110,19 @@
                         <label for="obs_password">Server Password</label>
                         <input type="password" id="obs_password" name="obs_password" placeholder="Enter OBS Password" class="form-input">
                     </div>
-                    <div class="form-group full-width">
-                        <div class="switch-container blinking-toggle-group">
-                            <label for="blinking_enabled" class="autoconnect-label">Enable Blinking</label>
-                            <label class="switch">
-                                <input type="checkbox" id="blinking_enabled">
-                                <span class="slider"></span>
-                            </label>
-                        </div>
-                    </div>
+
+                </div>
+            </section>
+
+            <section class="config-section">
+                <div class="section-title-container">
+                    <label for="blinking_enabled" class="clickable">︶ Enable Blinking</label>
+                    <label class="switch">
+                        <input type="checkbox" id="blinking_enabled">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div id="blinking-toggle-group" class="form-grid">
                     <div id="blinking-single-slider" class="form-group">
                         <div class="slider-header">
                             <label for="blink_time">Blink Time</label>
