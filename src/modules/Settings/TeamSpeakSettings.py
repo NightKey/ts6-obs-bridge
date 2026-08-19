@@ -13,10 +13,10 @@ class TeamSpeakSettings:
     def __ne__(self, other: Optional['TeamSpeakSettings']) -> bool:
         if other is None: return True
         return (
-                self.ip != other.ip or
-                self.port != other.port or
-                self.api != other.api or
-                self.user_mute_behavior != other.user_mute_behavior
+            self.ip != other.ip or
+            self.port != other.port or
+            self.api != other.api or
+            self.user_mute_behavior != other.user_mute_behavior
         )
 
     def copy(self) -> 'TeamSpeakSettings':
