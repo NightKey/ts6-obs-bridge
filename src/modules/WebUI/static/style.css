@@ -889,7 +889,7 @@ input:checked + .slider:before {
 }
 
 /* Tooltip text */
-.tooltip .tooltiptext {
+.tooltip .tooltip-text {
     visibility: hidden;
     width: 30rem;
     background-color: var(--color-main-dark);
@@ -911,7 +911,7 @@ input:checked + .slider:before {
 }
 
 /* Tooltip arrow */
-.tooltip .tooltiptext::after {
+.tooltip .tooltip-text::after {
     content: "";
     position: absolute;
     top: 100%;
@@ -923,7 +923,7 @@ input:checked + .slider:before {
 }
 
 /* Show the tooltip text when you mouse over the tooltip container */
-.tooltip:hover .tooltiptext {
+.tooltip:hover .tooltip-text {
     visibility: visible;
     opacity: 1;
 }
