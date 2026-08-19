@@ -3,11 +3,6 @@ from enum import Enum
 
 from typing import Optional
 
-
-class UserMutedBehavior(Enum):
-    Muted = False
-    Left = True
-
 @dataclass
 class TeamSpeakSettings:
     ip: str
@@ -33,4 +28,4 @@ class TeamSpeakSettings:
         )
 
     def __str__(self):
-        return f"TeamSpeak[ip: {self.ip} port: {self.port} api: {self.api} user_mute_behavior: {UserMutedBehavior(self.user_mute_behavior).name}]"
+        return f"TeamSpeak[ip: {self.ip} port: {self.port} api: {self.api} user_mute_behavior: {'Left' if self.user_mute_behavior else 'Muted'}]"

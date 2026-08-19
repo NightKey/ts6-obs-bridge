@@ -1,3 +1,3 @@
 from .OBSSettings import OBSSettings
-from .TeamSpeakSettings import TeamSpeakSettings, UserMutedBehavior
+from .TeamSpeakSettings import TeamSpeakSettings
 from .Settings import Settings

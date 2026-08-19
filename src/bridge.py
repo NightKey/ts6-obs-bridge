@@ -12,7 +12,7 @@ from smdb_logger import Logger, LEVEL
 from smdb_web_server import KnownError
 
 from modules import Settings, UserStatus, WebUI, Database, OBSConnector, TeamSpeak6Connector, OBSException, \
-    TeamSpeakException, show_open_calls, UserMutedBehavior
+    TeamSpeakException, show_open_calls
 
 
 class Bridge:
@@ -224,7 +224,7 @@ class Bridge:
         await self.update_settings(settings_copy)
 
     async def set_user_mute_behavior(self, value: bool) -> None:
-        self.logger.debug(f"Setting user_mute_behavior {UserMutedBehavior(value).name}")
+        self.logger.debug(f"Setting user_mute_behavior {'Left' if value else 'Muted'}")
         settings_copy = self.settings.copy()
         settings_copy.teamspeak.user_mute_behavior = value
         self.logger.trace("Updating settings")
