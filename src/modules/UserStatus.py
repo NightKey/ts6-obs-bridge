@@ -25,4 +25,4 @@ class UserStatus(Enum):
         if string == "muted": return UserStatus.Muted
         if string == "left": return UserStatus.Left
         if string == "blinking": return UserStatus.Blinking
-        raise NotImplemented
+        raise NotImplementedError
