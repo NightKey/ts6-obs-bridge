@@ -2,14 +2,12 @@ import asyncio
 from asyncio import timeout, Queue, create_task, Event, Task, Lock, sleep
 import base64
 import hashlib
-from threading import Thread
 from typing import Dict
 
 from smdb_logger import Logger
 from websockets import connect, ClientConnection, ConnectionClosedOK, ConnectionClosedError, State, CloseCode
 from json import loads, dumps
 from time import time
-from time import sleep as tsleep
 import random
 
 from . import OpCode, SceneItem, Request, RequestType, OBSException
@@ -268,7 +266,10 @@ class OBSConnector(BaseConnector):
             )
             self.logger.trace(f"Scene request created for {scene.itemName}-{subitem_name}. IsEnabled: {sub_item.enabled}")
             requests.append(sub_item.get_request(scene.itemName, self.request_id).to_request_dict())
-            status = UserStatus(subitem_name)
+            try:
+                status = UserStatus.from_string(subitem_name)
+            except NotImplemented:
+                continue
             if status == UserStatus.Blinking:
                 parent_string = item["sourceName"].split('-')[-2]
                 try:
