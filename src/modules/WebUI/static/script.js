@@ -188,6 +188,7 @@ async function saveSettings() {
         teamspeak_ip: document.getElementById('teamspeak_ip').value || document.getElementById('teamspeak_ip').placeholder,
         teamspeak_port: parseInt(document.getElementById('teamspeak_port').value || document.getElementById('teamspeak_port').placeholder, 10),
         teamspeak_api: document.getElementById('teamspeak_api').value,
+        user_mute_behavior: document.getElementById('user_mute_behavior').checked,
         obs_ip: document.getElementById('obs_ip').value || document.getElementById('obs_ip').placeholder,
         obs_port: parseInt(document.getElementById('obs_port').value || document.getElementById('obs_port').placeholder, 10),
         obs_password: document.getElementById('obs_password').value,
@@ -293,7 +294,7 @@ function setMuteBehaviorText(value) {
     infoText.innerText = value ? "Left" : "Muted";
 }
 
-async function toggleMuteBehavior() {
+async function checkMutedBehavior() {
     const toggle = document.getElementById('user_mute_behavior');
     if (!toggle) return;
 
@@ -306,6 +307,13 @@ async function toggleMuteBehavior() {
         },
         body: JSON.stringify({ "value": toggle.checked })
     });
+}
+
+async function toggleMuteBehavior() {
+    const toggle = document.getElementById('user_mute_behavior');
+    if (!toggle) return;
+    toggle.checked = !toggle.checked;
+    await checkMutedBehavior();
 }
 
 function hideOrShowBlinkingSliders(hide) {
@@ -496,5 +504,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     document.getElementById('autoconnect')?.addEventListener('change', toggleAutoConnect);
     document.getElementById('blinking_enabled')?.addEventListener('change', toggleBlinking);
-    document.getElementById('user_mute_behavior')?.addEventListener('change', toggleMuteBehavior);
+    document.getElementById('user_mute_behavior')?.addEventListener('change', checkMutedBehavior);
+    document.getElementById('user_mute_behavior_text')?.addEventListener('click', toggleMuteBehavior);
 });

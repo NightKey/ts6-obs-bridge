@@ -18,7 +18,7 @@ class Settings:
             ip = json["teamspeak_ip"],
             port = json["teamspeak_port"],
             api = json["teamspeak_api"],
-            user_mute_behavior=json.get("left_when_mutes", True)
+            user_mute_behavior=json.get("user_mute_behavior", True)
         )
         obs_settings = OBSSettings(
             ip=json["obs_ip"],
