@@ -131,7 +131,8 @@ async function reinitializeObs() {
         const response = await fetch(reinitEndpoint, { method: 'POST' }); // Adjust to method: 'GET' if required by backend
 
         if (!response.ok) {
-            throw new Error(`Reinit failed with status: ${response.status}`);
+            console.error(`Reinit failed with status: ${response.status}`);
+            return;
         }
 
         // Immediately update data loop seamlessly for the user
