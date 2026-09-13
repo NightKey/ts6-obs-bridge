@@ -68,6 +68,6 @@ cp "dist/readme.pdf" "dist/TeamSpeak-OBS-Bridge-App/readme.pdf"
 cp "dist/readme.pdf" "dist/TeamSpeak-OBS-Bridge-App-Headless/readme.pdf"
 
 echo "Creating tar.gz file"
-tar -czvf "dist/TeamSpeak-OBS-Bridge-App-Linux.tar.gz" "dist/TeamSpeak-OBS-Bridge-App"
-tar -czvf "dist/TeamSpeak-OBS-Bridge-App-Headless-Linux.tar.gz" "dist/TeamSpeak-OBS-Bridge-App-Headless"
+tar -czvf "dist/TeamSpeak-OBS-Bridge-App-Linux.tar.gz" -C "dist" "TeamSpeak-OBS-Bridge-App/"
+tar -czvf "dist/TeamSpeak-OBS-Bridge-App-Headless-Linux.tar.gz" -C "dist" "TeamSpeak-OBS-Bridge-App-Headless/"
 echo "Done"

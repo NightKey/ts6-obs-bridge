@@ -5,25 +5,26 @@ async function fetchUserMap() {
     try {
         const response = await fetch(endpoint);
         if (!response.ok) {
-            throw response;
+            console.error("Failed to fetch TeamSpeak data:", response.status);
+            setSyncIndicator(false);
+            const syncIndicator = document.getElementById('live-indicator');
+            syncIndicator.classList.remove("connected", "disconnected")
+            syncIndicator.classList.add("failed")
+            let message = "Failed to load TeamSpeak connections. Retrying..."
+            if (response.status === 503) {
+                message = response.statusText
+            }
+            document.getElementById('userList').innerHTML = `
+                <div class="empty-state">
+                    ${message}
+                </div>`;
+            return;
         }
         const result = await response.json();
         setSyncIndicator(result.connected);
         renderUsers(result.users);
-    } catch (response) {
-        console.error("Failed to fetch TeamSpeak data:", response.status);
-        setSyncIndicator(false);
-        const syncIndicator = document.getElementById('live-indicator');
-        syncIndicator.classList.remove("connected", "disconnected")
-        syncIndicator.classList.add("failed")
-        let message = "Failed to load TeamSpeak connections. Retrying..."
-        if (response.status === 503) {
-            message = response.statusText
-        }
-        document.getElementById('userList').innerHTML = `
-            <div class="empty-state">
-                ${message}
-            </div>`;
+    } catch (error) {
+        console.error("Error during fetching user map", error);
     }
 }
 
