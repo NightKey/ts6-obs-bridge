@@ -13,7 +13,10 @@ fi
 echo "Target version: $VERSION-$BRANCH"
 
 echo "Upgrading dependencies"
-pip install -r dependencies.txt --upgrade
+pip install -r dependencies.txt --upgrade > pip.txt
+python make-manifest.py pip.txt
+del pip.txt
+cp "manifest.json" "dist/linux-manifest.json"
 pip install pyinstaller
 
 echo "Building executable"

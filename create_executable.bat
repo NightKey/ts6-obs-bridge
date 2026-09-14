@@ -29,7 +29,10 @@ IF "%VIRTUAL_ENV%"=="" (
 )
 
 echo "Upgrading dependencies"
-call python -m pip install -r dependencies.txt --upgrade
+call python -m pip install -r dependencies.txt --upgrade > pip.text
+call python make-manifest.py pip.text
+del pip.txt
+copy "manifest.json" "dist/windows-manifest.json"
 call python -m pip install pyinstaller
 
 echo "Building executable"

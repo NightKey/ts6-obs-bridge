@@ -32,6 +32,7 @@ jobs:
         docker cp temp_linux:/app/dist/TeamSpeak-OBS-Bridge-App-Linux.tar.gz ./dist/TeamSpeak-OBS-Bridge-App-Linux.tar.gz
         docker cp temp_linux:/app/dist/TeamSpeak-OBS-Bridge-App-Linux.tar.gz ./dist/TeamSpeak-OBS-Bridge-App-Headless-Linux.tar.gz
         docker cp temp_linux:/app/dist/readme.pdf ./dist/readme.pdf
+        docker cp temp_linux:/app/dist/linux-manifest.json ./dist/linux-manifest.json
         docker rm temp_linux
 
     - name: Build Windows Executable
@@ -49,8 +50,10 @@ jobs:
         files: |
           dist/TeamSpeak-OBS-Bridge-App-Windows.zip
           dist/TeamSpeak-OBS-Bridge-App-Headless-Windows.zip
+          dist/linux-manifest.json
           dist/TeamSpeak-OBS-Bridge-App-Linux.tar.gz
           dist/TeamSpeak-OBS-Bridge-App-Headless-Linux.tar.gz
+          dist/windows-manifest.json
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
