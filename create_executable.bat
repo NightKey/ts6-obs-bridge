@@ -30,9 +30,6 @@ IF "%VIRTUAL_ENV%"=="" (
 
 echo "Upgrading dependencies"
 call python -m pip install -r dependencies.txt --upgrade > pip.text
-call python make-manifest.py pip.text
-del pip.txt
-copy "manifest.json" "dist/windows-manifest.json"
 call python -m pip install pyinstaller
 
 echo "Building executable"
@@ -73,6 +70,11 @@ mkdir "dist\TeamSpeak-OBS-Bridge-App\_internal\modules\WebUI\static" || exit /b 
 mkdir "dist\TeamSpeak-OBS-Bridge-App-Headless\_internal\modules\WebUI\static" || exit /b 1
 mkdir "dist\TeamSpeak-OBS-Bridge-App\_internal\modules\WebUI\templates" || exit /b 1
 mkdir "dist\TeamSpeak-OBS-Bridge-App-Headless\_internal\modules\WebUI\templates" || exit /b 1
+
+echo "Creating manifest"
+call python make-manifest.py pip.text
+del pip.txt
+copy "manifest.json" "dist/windows-manifest.json"
 
 echo "Copying WebUI assets"
 robocopy "src\modules\WebUI\static" "dist\TeamSpeak-OBS-Bridge-App\_internal\modules\WebUI\static" /e /copy:DAT /r:0

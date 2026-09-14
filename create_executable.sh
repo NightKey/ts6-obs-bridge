@@ -14,9 +14,6 @@ echo "Target version: $VERSION-$BRANCH"
 
 echo "Upgrading dependencies"
 pip install -r dependencies.txt --upgrade > pip.txt
-python make-manifest.py pip.txt
-rm pip.txt
-cp "manifest.json" "dist/linux-manifest.json"
 pip install pyinstaller
 
 echo "Building executable"
@@ -56,6 +53,11 @@ cp "dist/TeamSpeak-OBS-Bridge-App/data/version" "dist/TeamSpeak-OBS-Bridge-App-H
 echo "Creating WebUI folders"
 mkdir -p "./dist/TeamSpeak-OBS-Bridge-App/_internal/modules/WebUI"
 mkdir -p "./dist/TeamSpeak-OBS-Bridge-App-Headless/_internal/modules/WebUI"
+
+echo "Creating manifest"
+python make-manifest.py pip.txt
+rm pip.txt
+cp "manifest.json" "dist/linux-manifest.json"
 
 echo "Copying WebUI assets"
 cp -r "src/modules/WebUI/static" "dist/TeamSpeak-OBS-Bridge-App/_internal/modules/WebUI/static"
