@@ -319,7 +319,9 @@ class OBSConnector(BaseConnector):
                 self.logger.trace(f"User scene {user} was disabled")
                 continue
             current_scene = [subitem for subitem in user_scene.sub_items.values() if subitem.enabled][0]
-            if UserStatus.Blinking not in current_scene.sub_items.keys(): return
+            if UserStatus.Blinking not in current_scene.sub_items.keys():
+                self.logger.trace(f"User scene {user} with active scene {current_scene.itemName} has no blinking")
+                continue
             await self.set_user_to(user, UserStatus(current_scene.itemName), sub_target_state=UserStatus.Blinking)
             await sleep(self.blink_time / 1000)
             if len([subitem for subitem in user_scene.sub_items.values() if subitem.enabled]) > 0:

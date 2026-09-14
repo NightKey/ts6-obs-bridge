@@ -33,6 +33,7 @@ def async_wrapped(func):
             open_calls_lock.acquire()
             current_open = open_calls.get(key, 0)
             open_calls[key] = current_open - 1
+            self.logger.trace(f"Cleaning {func.__name__} from open_calls")
             if current_open <= 1:
                 del open_calls[key]
             open_calls_lock.release()
