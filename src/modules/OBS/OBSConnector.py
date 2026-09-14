@@ -55,7 +55,8 @@ class OBSConnector(BaseConnector):
         self.stopped.set()
 
     async def send(self, data: dict, op_code: OpCode):
-        self.logger.trace(f"Sending opcode: {op_code.name}")
+        self.logger.debug(f"Sending opcode: {op_code.name}")
+        self.logger.trace(f"Data: {data}")
         await self.websocket.send(
             dumps(
                 {
@@ -278,7 +279,7 @@ class OBSConnector(BaseConnector):
                         temp_statuses[parent_status] = sub_item
                     else:
                         scene.sub_items[parent_status].add_sub_item(status, sub_item)
-                        self.logger.debug(f"Scene subitem added to {scene.sub_items[parent_status].itemName}: {sub_item.itemName}")
+                        self.logger.debug(f"Scene subitem added to \"{scene.sub_items[parent_status].itemName}\": {sub_item.itemName}")
                     continue
                 except NotImplementedError:
                     self.logger.error(f"Scene name was incorrect: {item['sourceName']}. `{parent_string}` is not a valid state.")
@@ -312,13 +313,18 @@ class OBSConnector(BaseConnector):
             sleep_between_blinks = random.randint(self.low_blinking_interval, self.high_blinking_interval) / 1000
             self.logger.debug(f"Sleeping for {sleep_between_blinks} seconds")
             await sleep(sleep_between_blinks)
+            self.logger.trace(f"Blinking task sleep finished")
             user_scene = self.user_scenes.get(user, None)
-            if user_scene is None or not user_scene.enabled: continue
-            current_scene = [x for x in user_scene.sub_items.values() if x.enabled][0]
+            if user_scene is None or not user_scene.enabled:
+                self.logger.trace(f"User scene {user} was disabled")
+                continue
+            current_scene = [subitem for subitem in user_scene.sub_items.values() if subitem.enabled][0]
             if UserStatus.Blinking not in current_scene.sub_items.keys(): return
             await self.set_user_to(user, UserStatus(current_scene.itemName), sub_target_state=UserStatus.Blinking)
             await sleep(self.blink_time / 1000)
-            if len([x for x in user_scene.sub_items.values() if x.enabled]) > 0: continue
+            if len([subitem for subitem in user_scene.sub_items.values() if subitem.enabled]) > 0:
+                self.logger.trace(f"No blinking subitems active")
+                continue
             await self.set_user_to(user, UserStatus(current_scene.itemName))
 
     @async_wrapped

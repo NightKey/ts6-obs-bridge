@@ -112,7 +112,7 @@ function renderScenes(scenes) {
                         ${sourcesHTML}
                     </div>
                 </div>
-                ${scene.blinking ? '<span class="status-badge">👁</span>': ''}
+                ${scene.blinking ? '<span class="status-badge"> ︶</span>': ''}
                 <span class="status-badge">${badgeText}</span>
             </li>
         `;
