@@ -97,7 +97,7 @@ function renderScenes(scenes) {
                         if (source.enabled && source.name === "muted") {
                             statusClass = "status-muted";
                         }
-                        return `<span class="source-tag" ${sourceStyle}>${escapeHTML(source.name)}${hasBlinking ? ' ︶' : ''}</span> ${sourceItems}`;
+                        return `<span class="source-tag" ${sourceStyle}>${escapeHTML(source.name)}${hasBlinking ? '︶' : ''}</span> ${sourceItems}`;
                     }).join('')}
                 </div>`
             : '<div class="scene-sources"><span class="source-tag" style="font-style: italic;">No sources</span></div>';
@@ -112,7 +112,7 @@ function renderScenes(scenes) {
                         ${sourcesHTML}
                     </div>
                 </div>
-                ${scene.blinking ? '<span class="status-badge"> ︶</span>': ''}
+                ${scene.blinking ? '<span class="status-badge">👁️</span>': ''}
                 <span class="status-badge">${badgeText}</span>
             </li>
         `;
