@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - 'beta'
+      - 'stable'
 
 jobs:
   compile-and-publish:
@@ -14,11 +15,11 @@ jobs:
     
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Retrieve version
         shell: bash
-        run: echo "version=$(cat ./version) Beta ${{ github.run_id }}" >> $GITHUB_ENV
+        run: echo "version=$(cat ./version) ${GITHUB_REFNAME^} $GITHUB_RUN_ID" >> $GITHUB_ENV
 
       - name: Windows Build check
         shell: cmd
@@ -43,7 +44,7 @@ jobs:
           call .\create_executable.bat ${{ github.version }}
 
       - name: Publish to GitHub Releases
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ github.version }}
           name: Release ${{ github.version }}
