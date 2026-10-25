@@ -2,10 +2,8 @@ name: Build Cross-Platform Releases
 
 on:
   push:
-    tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+-Stable'
-      - 'v[0-9]+.[0-9]+.[0-9]+-Beta-[a-zA-Z0-9]+'
-      - 'v[0-9]+.[0-9]+.[0-9]+'
+    branches:
+      - 'stable'
 
 jobs:
   compile-and-publish:
@@ -18,6 +16,10 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v4
 
+    - name: Retrieve version
+      shell: bash
+      run: echo "version=$(cat ./version) Stable ${{ github.run_id }}" >> $GITHUB_ENV
+
     - name: Windows Build check
       shell: cmd
       run: |
@@ -26,7 +28,7 @@ jobs:
     - name: Build Linux Executable
       shell: cmd
       run: |
-        docker build --build-arg TAG=${{ github.ref_name }} -t ts-obs-linux -f docker .
+        docker build --build-arg TAG=${{ github.version }} -t ts-obs-linux -f docker .
         docker create --name temp_linux ts-obs-linux
         if not exist dist mkdir dist
         docker cp temp_linux:/app/dist/TeamSpeak-OBS-Bridge-App-Linux.tar.gz ./dist/TeamSpeak-OBS-Bridge-App-Linux.tar.gz
@@ -38,13 +40,13 @@ jobs:
     - name: Build Windows Executable
       shell: cmd
       run: |
-        call .\create_executable.bat ${{ github.ref_name }}
+        call .\create_executable.bat ${{ github.version }}
 
     - name: Publish to GitHub Releases
       uses: softprops/action-gh-release@v2
       with:
-        tag_name: ${{ github.ref_name }}
-        name: Release ${{ github.ref_name }}
+        tag_name: ${{ github.version }}
+        name: Release ${{ github.version }}
         draft: false
         prerelease: false
         files: |

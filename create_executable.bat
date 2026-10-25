@@ -6,18 +6,18 @@ if exist "dist\TeamSpeak-OBS-Bridge-App-Windows.zip" del "dist\TeamSpeak-OBS-Bri
 SET "INPUT_TAG=%~1"
 SET "VERSION=0.0.0"
 SET "BRANCH=unknown"
+SET "BUILD=0"
 
 if "%INPUT_TAG%"=="" goto :skip_parsing
 
-SET "TMP_TAG=%INPUT_TAG:v=%"
-
-for /f "tokens=1,2 delims=-" %%A in ("%TMP_TAG%") do (
+for /f "tokens=1,2,3 delims= " %%A in ("%INPUT_TAG%") do (
     SET "VERSION=%%A"
     SET "BRANCH=%%B"
+    SET "BUILD=%%C"
 )
 
 :skip_parsing
-echo Target version: %VERSION%-%BRANCH%
+echo Target version: %VERSION%-%BRANCH% %BUILD%
 
 IF NOT EXIST venv\ (
     ECHO Venv doesn't exist, creating venv.

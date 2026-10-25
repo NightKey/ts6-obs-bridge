@@ -3,14 +3,18 @@ echo "Cleaning previous build"
 rm -f "dist/TeamSpeak-OBS-Bridge-App-Linux.tar.gz"
 rm -rf "dist/TeamSpeak-OBS-Bridge-App"
 
-RE="v([0-9]+\.[0-9]+\.[0-9]+)(-|)([a-zA-Z]+|)"
+RE='^([0-9]+\.[0-9]+\.[0-9]+)( +([a-zA-Z]+))?( +([a-zA-Z0-9]+))?'
 VERSION=""
 BRANCH=""
+BUILD=""
+
 if [[ $1 =~ $RE ]]; then
   VERSION=${BASH_REMATCH[1]}
   BRANCH=${BASH_REMATCH[3]}
+  BUILD=${BASH_REMATCH[5]}
 fi
-echo "Target version: $VERSION-$BRANCH"
+
+echo "Target version: $VERSION-$BRANCH $BUILD"
 
 echo "Upgrading dependencies"
 pip install -r dependencies.txt --upgrade > pip.txt
