@@ -40,8 +40,6 @@ you will be redirected to the new page.
 ![webui_settings](resources/webui_settings.png)
 
 ## Team Speak
-> [!CAUTION]
-> For the use, you need to connect to the server you want to use for the stream on Team Speak before connecting the application to it.
 
 For Team Speak, when you click on connect, the application will request an API key from Team Speak.
 
