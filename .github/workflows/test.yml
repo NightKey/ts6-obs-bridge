@@ -1,6 +1,9 @@
 name: Test Cross-Platform Releases
 
-on: push
+on:
+  push:
+    branches:
+      - 'master'
 
 jobs:
   compile-and-publish:
