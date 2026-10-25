@@ -18,8 +18,12 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Retrieve version
-        shell: bash
-        run: echo "version=$(cat ./version) ${GITHUB_REFNAME^} $GITHUB_RUN_ID" >> $GITHUB_ENV
+        shell: pwsh
+        run: |
+          $version = (Get-Content ./version -Raw).Trim()
+          $branch = $env:GITHUB_REF_NAME
+          if ($branch) { $branch = $branch.Substring(0,1).ToUpper() + $branch.Substring(1) }
+          "version=$version $branch $env:GITHUB_RUN_ID" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Windows Build check
         shell: cmd
