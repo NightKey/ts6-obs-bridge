@@ -21,8 +21,8 @@ async function fetchUserMap() {
             return;
         }
         const result = await response.json();
-        setSyncIndicator(result.connected);
-        renderUsers(result.users);
+        setSyncIndicator(result.client_connected);
+        renderUsers(result.users, result.channel_connected);
     } catch (error) {
         console.error("Error during fetching user map", error);
     }
@@ -31,13 +31,17 @@ async function fetchUserMap() {
 function setSyncIndicator(connected) {
     const syncIndicator = document.getElementById('live-indicator');
     syncIndicator.classList.remove("connected", "disconnected", "failed");
-    syncIndicator.classList.remove("connected");
     syncIndicator.classList.add(connected ? "connected" : "disconnected");
     syncIndicator.innerText = connected ? "connected" : "disconnected";
 }
 
-function renderUsers(users) {
+function renderUsers(users, channel_connected) {
     const listContainer = document.getElementById('userList');
+
+    if (!channel_connected) {
+        listContainer.innerHTML = '<div class="empty-state">Not connected to a channel</div>';
+        return;
+    }
 
     if (!users || users.length === 0) {
         listContainer.innerHTML = '<div class="empty-state">Channel is empty</div>';

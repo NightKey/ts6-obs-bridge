@@ -107,6 +107,10 @@ class TeamSpeak6Connector(BaseConnector):
         self.logger.trace(f"Response: {response}")
         self.websocket = websocket
         if len(response["payload"]["connections"]) == 0:
+            self.logger.debug("User id could not be determined")
+            self.stopped.clear()
+            create_task(self.retrieve_loop(), name="TS6 retrieve task")
+            return True
             raise TeamSpeakException(f"Could not determine user. Please connect to a server.")
         await self.load_clients_present(response["payload"]["connections"][0]["clientId"],  response["payload"]["connections"][0]["clientInfos"])
         self.logger.debug(f"User id: {self.user.id}")
@@ -155,6 +159,11 @@ class TeamSpeak6Connector(BaseConnector):
                         await self.client_channel_group_changed(message["payload"])
                     elif message["type"] == "clientMoved":
                         await self.client_moved(message["payload"])
+                    elif message["type"] == "proto.ServerEvent":
+                        if "initServer" in message["payload"].keys():
+                            await self.server_init_event(message["payload"]["initServer"])
+                        elif "clientLeftView" in message["payload"].keys():
+                            await self.client_left_view_event(message["payload"]["clientLeftView"])
                 self.logger.heartbeat(".")
             except TimeoutError:
                 pass
@@ -167,6 +176,32 @@ class TeamSpeak6Connector(BaseConnector):
             except Exception as ex:
                 self.logger.error("Error during retrieving message", ex)
         await self.__cleanup()
+
+    @async_wrapped
+    @async_sync
+    async def client_left_view_event(self, message: dict) -> None:
+        self.logger.debug("Processing leftViewEvent")
+        if message["clientId"] != self.user.id: return
+        del self.user
+        for _, clientInfo in self.user_client_info_map:
+            self.user_status_changed_callback(clientInfo.name, UserStatus.Left)
+        self.user_client_info_map.clear()
+        self.logger.debug(f"User disconnected")
+
+    @async_wrapped
+    @async_sync
+    async def server_init_event(self, message: dict) -> None:
+        self.logger.debug("Processing proto.ServerEvent message")
+        self.user = ClientInfo(
+            id=message["clientId"],
+            name=message["clientName"],
+            is_talking=None,
+            is_muted=None,
+            is_deafened=None,
+            is_muted_by_user=None,
+            channel_id=None
+        )
+        self.logger.debug(f"User {self.user.name} is connected to server {message['serverProperties']['name']}")
 
     @async_wrapped
     @async_sync
@@ -281,4 +316,4 @@ class TeamSpeak6Connector(BaseConnector):
         await self.user_deafened_changed_callback(status)
 
     def get_user_map(self) -> dict:
-        return {"connected": self.is_connected, "users": [{"id":x.id, "name":x.name, "status":self.evaluate_client_info(x).name if x.name is not None else None} for x in self.user_client_info_map.values()]}
+        return {"client_connected": self.is_connected, "channel_connected": hasattr(self, "user"), "users": [{"id":x.id, "name":x.name, "status":self.evaluate_client_info(x).name if x.name is not None else None} for x in self.user_client_info_map.values()]}
