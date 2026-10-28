@@ -96,7 +96,7 @@ class Bridge:
             ),
             version=self.version,
             user_status_changed_callback=self.user_state_changed,
-            user_deafened_changed_callback=self.deafen_toggled
+            client_disconnection_callback=self.teamspeak_disconnected
         )
 
     def init_webui(self) ->  None:
@@ -202,6 +202,13 @@ class Bridge:
         asyncio.new_event_loop().run_until_complete(self.autoconnect_loop())
 
     @async_log_wrapped
+    async def teamspeak_disconnected(self) -> None:
+        self.logger.debug("Team Speak disconnected")
+        if not self.obs_connector.is_connected: return
+        self.logger.trace(f"Setting all users to {UserStatus.Left}")
+        await self.obs_connector.set_all_user_to(UserStatus.Left)
+
+    @async_log_wrapped
     async def autoconnect_loop(self) -> None:
         while not self.stop_event.is_set() and self.settings and self.settings.autoconnect:
             try:
@@ -252,6 +259,22 @@ class Bridge:
         await self.update_settings(settings_copy)
 
     @async_log_wrapped
+    async def start_speaking_animation_callback(self, value: bool) -> None:
+        self.logger.debug(f"Setting start speaking animation {value}")
+        settings_copy = self.settings.copy()
+        settings_copy.speak_start_animation_enabled = value
+        self.logger.trace("Updating settings")
+        await self.update_settings(settings_copy)
+
+    @async_log_wrapped
+    async def stop_speaking_animation_callback(self, value: bool) -> None:
+        self.logger.debug(f"Setting stop speaking animation {value}")
+        settings_copy = self.settings.copy()
+        settings_copy.speak_end_animation_enabled = value
+        self.logger.trace("Updating settings")
+        await self.update_settings(settings_copy)
+
+    @async_log_wrapped
     async def update_settings(self, data: Settings) -> None:
         if await self.database.upsert_settings(data):
             if self.settings is None:
@@ -272,14 +295,19 @@ class Bridge:
 
     @async_log_wrapped
     async def user_state_changed(self, user: str, target_state: UserStatus) -> None:
-        self.logger.debug(f"Change state requested for {user}")
         self.logger.debug(f"Change state requested for {user} -> {target_state}")
+        if target_state.value == UserStatus.Speaking.value and self.settings.speak_start_animation_enabled:
+            self.logger.trace("Speak start animation enabled")
+            await self.obs_connector.set_user_to(user, UserStatus.StartSpeaking)
+            self.logger.trace("Speak start set")
+            time.sleep(.05)
+        elif target_state.value == UserStatus.Quiet.value and self.settings.speak_end_animation_enabled:
+            self.logger.trace("Speak end animation enabled")
+            await self.obs_connector.set_user_to(user, UserStatus.StopSpeaking)
+            self.logger.trace("Speak end set")
+            time.sleep(.05)
+        self.logger.trace(f"Setting state to {target_state}")
         await self.obs_connector.set_user_to(user, target_state)
-
-    @async_log_wrapped
-    async def set_deafen(self, is_deafened: bool) -> None:
-        self.logger.debug(f"Deafen set to {is_deafened}")
-        await self.obs_connector.set_deafen(is_deafened)
 
     def stop_all(self) -> None:
         self.stop_event.set()

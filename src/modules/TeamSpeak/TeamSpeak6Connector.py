@@ -13,7 +13,6 @@ class TeamSpeak6Connector(BaseConnector):
     __logger: Logger
     sync_lock = Lock()
     user_status_changed_callback: Callable[[str, UserStatus], Coroutine[Any, Any, None]]
-    user_deafened_changed_callback: Callable[[bool], Coroutine[Any, Any, None]]
     user: ClientInfo
     websocket: ClientConnection | None = None
     stop_event: Event = Event()
@@ -39,12 +38,12 @@ class TeamSpeak6Connector(BaseConnector):
             logger: Logger,
             version: str,
             user_status_changed_callback: Callable[[str, UserStatus], Coroutine[Any, Any, None]],
-            user_deafened_changed_callback: Callable[[bool], Coroutine[Any, Any, None]]
+            client_disconnection_callback: Callable[..., Coroutine[Any, Any, None]]
     ):
         self.__logger = logger
         self.version = version
         self.user_status_changed_callback = user_status_changed_callback
-        self.user_deafened_changed_callback = user_deafened_changed_callback
+        self.client_disconnection_callback = client_disconnection_callback
         self.stopped.set()
 
     def evaluate_client_info(self, client_info: ClientInfo | None, user_channel: int | None = None) -> UserStatus | None:
@@ -108,12 +107,9 @@ class TeamSpeak6Connector(BaseConnector):
         self.websocket = websocket
         if len(response["payload"]["connections"]) == 0:
             self.logger.debug("User id could not be determined")
-            self.stopped.clear()
-            create_task(self.retrieve_loop(), name="TS6 retrieve task")
-            return True
-            raise TeamSpeakException(f"Could not determine user. Please connect to a server.")
-        await self.load_clients_present(response["payload"]["connections"][0]["clientId"],  response["payload"]["connections"][0]["clientInfos"])
-        self.logger.debug(f"User id: {self.user.id}")
+        else:
+            await self.load_clients_present(response["payload"]["connections"][0]["clientId"],  response["payload"]["connections"][0]["clientInfos"])
+            self.logger.debug(f"User id: {self.user.id}")
         self.stopped.clear()
         create_task(self.retrieve_loop(), name="TS6 retrieve task")
         return True
@@ -175,6 +171,7 @@ class TeamSpeak6Connector(BaseConnector):
                 self.stop_event.set()
             except Exception as ex:
                 self.logger.error("Error during retrieving message", ex)
+        await self.client_disconnection_callback()
         await self.__cleanup()
 
     @async_wrapped
@@ -195,10 +192,10 @@ class TeamSpeak6Connector(BaseConnector):
         self.user = ClientInfo(
             id=message["clientId"],
             name=message["clientName"],
-            is_talking=None,
-            is_muted=None,
-            is_deafened=None,
-            is_muted_by_user=None,
+            is_talking=False,
+            is_muted=False,
+            is_deafened=False,
+            is_muted_by_user=False,
             channel_id=None
         )
         self.logger.debug(f"User {self.user.name} is connected to server {message['serverProperties']['name']}")
