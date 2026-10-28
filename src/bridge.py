@@ -1,5 +1,6 @@
 import asyncio
 from asyncio import sleep
+from functools import wraps
 from json import load
 from threading import Thread
 from typing import Tuple
@@ -14,6 +15,18 @@ from smdb_web_server import KnownError
 from modules import Settings, UserStatus, WebUI, Database, OBSConnector, TeamSpeak6Connector, OBSException, \
     TeamSpeakException, show_open_calls
 
+def async_log_wrapped(func):
+    @wraps(func)
+    async def wrapper(self: Bridge, *args, **kwargs):
+        self.logger.trace(f"Entering function {func.__name__}")
+        try:
+            func_result = await func(self, *args, **kwargs)
+            self.logger.trace(f"Exiting function {func.__name__}. Result is '{func_result}'")
+            return func_result
+        except Exception as e:
+            self.logger.trace(f"Function {func.__name__} raised an error {e}")
+            raise e
+    return wrapper
 
 class Bridge:
     settings: Settings
@@ -53,7 +66,7 @@ class Bridge:
         self.obs_connector = OBSConnector(
             logger=Logger(
                 log_to_console=True,
-                use_caller_name=False,
+                use_caller_name=True,
                 use_file_names=True,
                 use_log_name=True,
                 level=LEVEL.from_string(LEVELS["obs"]["level"]),
@@ -121,6 +134,7 @@ class Bridge:
             port=self.settings.port
         )
 
+    @async_log_wrapped
     async def change_webui_settings(self, host: str, port: int) -> None:
         self.logger.info(f"Changed webui settings to {host}:{port}")
         self.settings.host = host
@@ -143,6 +157,7 @@ class Bridge:
             self.logger.debug("Starting auto connect")
             Thread(target=self.autoconnect, name="Auto connect loop").start()
 
+    @async_log_wrapped
     async def connect_to_teamspeak(self) -> bool:
         self.logger.info("Connecting to TeamSpeak")
         if self.settings.teamspeak is None: return False
@@ -153,12 +168,14 @@ class Bridge:
             await self.update_settings(self.settings)
         return await self.team_speak_6_connector.connect(self.settings.teamspeak)
 
+    @async_log_wrapped
     async def connect_to_obs(self) -> bool:
         self.logger.info("Connecting to OBS")
         if self.settings.obs is None: return False
         if self.obs_connector.is_connected: return True
         return await  self.obs_connector.connect(self.settings.obs)
 
+    @async_log_wrapped
     async def re_init_obs(self) -> None:
         await self.obs_connector.re_init_obs()
 
@@ -184,10 +201,11 @@ class Bridge:
         self.logger.debug("Starting auto connect loop")
         asyncio.new_event_loop().run_until_complete(self.autoconnect_loop())
 
+    @async_log_wrapped
     async def autoconnect_loop(self) -> None:
         while not self.stop_event.is_set() and self.settings and self.settings.autoconnect:
             try:
-                self.logger.trace(f"Checking if team speak is connected {self.team_speak_6_connector.is_connected}")
+                self.logger.trace(f"Checking if Team Speak is connected {self.team_speak_6_connector.is_connected}")
                 if not self.team_speak_6_connector.is_connected:
                      await self.connect_to_teamspeak()
             except TeamSpeakException as tse:
@@ -208,6 +226,7 @@ class Bridge:
     def get_settings(self) -> Settings:
         return self.settings
 
+    @async_log_wrapped
     async def toggle_autoconnect(self, value: bool) -> None:
         self.logger.debug(f"Toggling auto connect to {value}")
         self.settings.autoconnect = value
@@ -216,6 +235,7 @@ class Bridge:
         if self.settings.autoconnect:
             Thread(target=self.autoconnect, name="Auto connect loop").start()
 
+    @async_log_wrapped
     async def set_blinking(self, value: bool) -> None:
         self.logger.debug(f"Setting blinking {value}")
         settings_copy = self.settings.copy()
@@ -223,6 +243,7 @@ class Bridge:
         self.logger.trace("Updating settings")
         await self.update_settings(settings_copy)
 
+    @async_log_wrapped
     async def set_user_mute_behavior(self, value: bool) -> None:
         self.logger.debug(f"Setting user_mute_behavior {'Left' if value else 'Muted'}")
         settings_copy = self.settings.copy()
@@ -230,6 +251,7 @@ class Bridge:
         self.logger.trace("Updating settings")
         await self.update_settings(settings_copy)
 
+    @async_log_wrapped
     async def update_settings(self, data: Settings) -> None:
         if await self.database.upsert_settings(data):
             if self.settings is None:
@@ -248,13 +270,16 @@ class Bridge:
                     await sleep(0.3)
                 await self.connect_to_teamspeak()
 
+    @async_log_wrapped
     async def user_state_changed(self, user: str, target_state: UserStatus) -> None:
         self.logger.debug(f"Change state requested for {user}")
+        self.logger.debug(f"Change state requested for {user} -> {target_state}")
         await self.obs_connector.set_user_to(user, target_state)
 
-    async def deafen_toggled(self, is_deafened: bool) -> None:
-        self.logger.debug("Deafen toggled")
-        await self.obs_connector.toggle_deafen(is_deafened)
+    @async_log_wrapped
+    async def set_deafen(self, is_deafened: bool) -> None:
+        self.logger.debug(f"Deafen set to {is_deafened}")
+        await self.obs_connector.set_deafen(is_deafened)
 
     def stop_all(self) -> None:
         self.stop_event.set()

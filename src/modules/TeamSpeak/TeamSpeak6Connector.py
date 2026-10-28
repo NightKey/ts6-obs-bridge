@@ -183,7 +183,7 @@ class TeamSpeak6Connector(BaseConnector):
         self.logger.debug("Processing leftViewEvent")
         if message["clientId"] != self.user.id: return
         del self.user
-        for _, clientInfo in self.user_client_info_map:
+        for _, clientInfo in self.user_client_info_map.items():
             self.user_status_changed_callback(clientInfo.name, UserStatus.Left)
         self.user_client_info_map.clear()
         self.logger.debug(f"User disconnected")
@@ -259,7 +259,8 @@ class TeamSpeak6Connector(BaseConnector):
         if client_id != self.user.id: return
         for client_id, client_info in self.user_client_info_map.items():
             self.logger.trace(
-                f"clientChannelGroupChanged: Calling user_state_changed for user {client_info.name} old status {self.evaluate_client_info(client_info)} mew status {UserStatus.Left if client_info.channel_id != new_channel_id else UserStatus.Quiet}")
+                f"clientChannelGroupChanged: Calling user_state_changed for user {client_info.name} old status {self.evaluate_client_info(client_info)} mew status {UserStatus.Left if client_info.channel_id != new_channel_id else UserStatus.Quiet}"
+            )
             await self.user_state_changed(
                 client_info.name,
                 self.evaluate_client_info(client_info, new_channel_id)
@@ -274,7 +275,8 @@ class TeamSpeak6Connector(BaseConnector):
         if client_id == self.user.id:
             for client_id, client_info in self.user_client_info_map.items():
                 self.logger.trace(
-                    f"clientMoved: Calling user_state_changed for user {client_info.name} old status {self.evaluate_client_info(client_info)} mew status {UserStatus.Left if client_info.channel_id != new_channel_id else UserStatus.Quiet}")
+                    f"clientMoved: Calling user_state_changed for user {client_info.name} old status {self.evaluate_client_info(client_info)} mew status {UserStatus.Left if client_info.channel_id != new_channel_id else UserStatus.Quiet}"
+                )
                 await self.user_state_changed(
                     client_info.name,
                     self.evaluate_client_info(client_info, new_channel_id)
@@ -306,14 +308,20 @@ class TeamSpeak6Connector(BaseConnector):
 
     @async_wrapped
     async def user_state_changed(self, user_name: str, new_status: UserStatus | None) -> None:
-        if new_status is None: return
-        self.logger.debug(f"User {user_name} status {new_status}")
-        if not self.user.is_deafened: await self.user_status_changed_callback(user_name, new_status)
+        if new_status is None or self.user.is_deafened: return
+        self.logger.debug(f"User {user_name} status: {new_status}")
+        await self.user_status_changed_callback(user_name, new_status)
 
     @async_wrapped
     async def user_deafened_changed(self, status: bool | None) -> None:
-        if status is None: return
-        await self.user_deafened_changed_callback(status)
+        if status is None or status == self.user.is_deafened: return
+        for _, user in self.user_client_info_map.items():
+            user_status = self.evaluate_client_info(user) if not status else UserStatus.Muted
+            await self.user_state_changed(user.name, user_status)
 
     def get_user_map(self) -> dict:
-        return {"client_connected": self.is_connected, "channel_connected": hasattr(self, "user"), "users": [{"id":x.id, "name":x.name, "status":self.evaluate_client_info(x).name if x.name is not None else None} for x in self.user_client_info_map.values()]}
+        return {
+            "client_connected": self.is_connected,
+            "channel_connected": hasattr(self, "user"),
+            "users": [{"id":x.id, "name":x.name, "status":self.evaluate_client_info(x).name if x.name is not None else None} for x in self.user_client_info_map.values()]
+        }

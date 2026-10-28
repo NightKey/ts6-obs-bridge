@@ -28,7 +28,7 @@ def async_wrapped(func):
             self.logger.debug(f"Function {func.__name__} returned '{result}'")
             return result
         finally:
-            self.logger.debug(f"Function {func.__name__} exited after {(time_ns() - start)/1_000_000} ms")
+            self.logger.trace(f"Function {func.__name__} exited after {(time_ns() - start)/1_000_000} ms")
             self.logger.trace("Waiting for open_calls' lock")
             open_calls_lock.acquire()
             current_open = open_calls.get(key, 0)
@@ -46,19 +46,19 @@ def async_sync(func):
     """
     @wraps(func)
     async def async_sync_wrapper(self: BaseConnector, *args, **kwargs):
-        self.logger.debug(f"Acquiring sync-lock for {func.__name__}")
+        self.logger.trace(f"Acquiring sync-lock for {func.__name__}")
         await self.sync_lock.acquire()
         try:
             result = await func(self, *args, **kwargs)
             self.logger.debug(f"Synchronized function {func.__name__} finished")
             return result
         finally:
-            self.logger.debug(f"Releasing sync-lock for {func.__name__}")
+            self.logger.trace(f"Releasing sync-lock for {func.__name__}")
             self.sync_lock.release()
 
     return async_sync_wrapper
 
-def show_open_calls(print) -> None:
+def show_open_calls(output) -> None:
     open_calls_lock.acquire()
-    print(f"Open calls: {[name + '->' + str(amount) for name, amount in open_calls.items()] or 'None'}")
+    output(f"Open calls: {[name + '->' + str(amount) for name, amount in open_calls.items()] or 'None'}")
     open_calls_lock.release()
