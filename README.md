@@ -33,6 +33,11 @@ Two options are available:
 
 ![usermutebehaviour](resources/teamspeak_usermutebehavior.png)
 
+## Speaking Animations
+These settings enable two more user state. `startSpeaking` (half a second before `speaking` state is set) and `stopSpeaking` (half a second before `quiet` state is set).
+
+![speakinganimation](resources/speaking_animations.png)
+
 ## WebUI Settings
 This page allows you to change the host and port of the web UI. When clicking on Update, the UI will restart, and after 2 seconds,
 you will be redirected to the new page.

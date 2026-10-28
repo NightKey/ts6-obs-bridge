@@ -17,6 +17,38 @@ async function apiFetch(endpoint, options = {}) {
     return await response.json();
 }
 
+function initButtonHandlers() {
+    document.getElementById('btnSave')?.addEventListener('click', saveSettings);
+    document.getElementById('btnConnectAll')?.addEventListener('click', connectAllConnections);
+    document.getElementById('ts_status')?.addEventListener('click', openTeamspeakDiagnostics);
+    document.getElementById('obs_status')?.addEventListener('click', openObsDiagnostics);
+    document.getElementById('btnConnectTS')?.addEventListener('click', connectToTeamspeak);
+    document.getElementById('btnConnectOBS')?.addEventListener('click', connectToOBS);
+    document.getElementById('btnStop')?.addEventListener('click', stopAllConnections);
+    document.getElementById('btnCloseError')?.addEventListener('click', () => {
+        document.getElementById('errorPopup').classList.remove('show');
+    });
+    document.getElementById('ts_hide')?.addEventListener('click', () => {
+        animateButtonToggleHide("ts_hide", "ts-form-grid");
+    });
+    document.getElementById('obs_hide')?.addEventListener('click', () => {
+        animateButtonToggleHide("obs_hide", "obs-form-grid");
+    });
+    document.getElementById('autoconnect')?.addEventListener('change', toggleAutoConnect);
+    document.getElementById('blinking_enabled')?.addEventListener('change', toggleBlinking);
+    document.getElementById('user_mute_behavior')?.addEventListener('change', checkMutedBehavior);
+    document.getElementById('user_mute_behavior_text')?.addEventListener('click', toggleMuteBehavior);
+    document.getElementById('speaking-animation-hide')?.addEventListener('click', () => {
+        animateButtonToggleHide("speaking-animation-hide", "speaking-animation-form-grid");
+    });
+    document.getElementById('start_speaking_animation')?.addEventListener('change', () => {
+        toggleStartStopSpeakingAnimation('start_speaking_animation').then();
+    });
+    document.getElementById('stop_speaking_animation')?.addEventListener('change', () => {
+        toggleStartStopSpeakingAnimation('stop_speaking_animation').then();
+    });
+}
+
 // Function to dynamically update the UI connection status markers
 function updateStatusMarker(elementId, isConnected) {
     const marker = document.getElementById(elementId);
@@ -111,6 +143,20 @@ async function loadSettings() {
         userMuteBehavior.checked = data['user_mute_behavior'];
         setMuteBehaviorText(data['user_mute_behavior']);
     }
+
+    // Load in 'start_speak_animation' value
+    const startSpeakingAnimation = document.getElementById('start_speaking_animation');
+    if (startSpeakingAnimation && data['speak_start_animation_enabled'] !== undefined) {
+        startSpeakingAnimation.checked = data['speak_start_animation_enabled'];
+    }
+
+    // Load in 'stop_speak_animation' value
+    const stopSpeakingAnimation = document.getElementById('stop_speaking_animation');
+    if (stopSpeakingAnimation && data['speak_end_animation_enabled'] !== undefined) {
+        stopSpeakingAnimation.checked = data['speak_end_animation_enabled'];
+    }
+
+    initButtonHandlers();
 }
 
 // Double slider handling & visualization rendering helper
@@ -200,7 +246,11 @@ async function saveSettings() {
         high_blink_interval: parseInt(document.getElementById('high_blink_interval').value, 10),
 
         // Save blinking enabled state
-        blink_enabled: document.getElementById('blinking_enabled').checked
+        blink_enabled: document.getElementById('blinking_enabled').checked,
+
+        // Save Start and Stop Speaking animation
+        start_speaking_animation: document.getElementById('start_speaking_animation').checked,
+        stop_speaking_animation: document.getElementById('stop_speaking_animation').checked
     };
 
     const response = await apiFetch('update_settings', {
@@ -272,6 +322,19 @@ async function toggleAutoConnect() {
     }
 }
 
+async function toggleStartStopSpeakingAnimation(name) {
+    const toggle = document.getElementById(name);
+    if (!toggle) return;
+
+    await apiFetch(name, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ "value": toggle.checked })
+    });
+}
+
 // Toggle blinking on demand endpoint caller
 async function toggleBlinking() {
     const toggle = document.getElementById('blinking_enabled');
@@ -317,13 +380,13 @@ async function toggleMuteBehavior() {
 }
 
 function hideOrShowBlinkingSliders(hide) {
-    const blinkingToggleGroup = document.getElementById("blinking-toggle-group");
-    if (!blinkingToggleGroup) return;
+    const blinkingToggleGrid = document.getElementById("blinking-form-grid");
+    if (!blinkingToggleGrid) return;
 
     if (hide) {
-        blinkingToggleGroup.classList.add("hidden");
+        blinkingToggleGrid.classList.add("hidden");
     } else {
-        blinkingToggleGroup.classList.remove("hidden");
+        blinkingToggleGrid.classList.remove("hidden");
     }
 }
 
@@ -484,26 +547,4 @@ document.addEventListener('DOMContentLoaded', () => {
     // Setup initial connection state check, then run every 3000ms (3 seconds)
     checkConnectionState().then();
     setInterval(checkConnectionState, 3000);
-
-    // Bind event listeners to DOM buttons using specified IDs
-    document.getElementById('btnSave')?.addEventListener('click', saveSettings);
-    document.getElementById('btnConnectAll')?.addEventListener('click', connectAllConnections);
-    document.getElementById('ts_status')?.addEventListener('click', openTeamspeakDiagnostics);
-    document.getElementById('obs_status')?.addEventListener('click', openObsDiagnostics);
-    document.getElementById('btnConnectTS')?.addEventListener('click', connectToTeamspeak);
-    document.getElementById('btnConnectOBS')?.addEventListener('click', connectToOBS);
-    document.getElementById('btnStop')?.addEventListener('click', stopAllConnections);
-    document.getElementById('btnCloseError')?.addEventListener('click', () => {
-        document.getElementById('errorPopup').classList.remove('show');
-    });
-    document.getElementById('ts_hide')?.addEventListener('click', () => {
-        animateButtonToggleHide("ts_hide", "ts-form-grid");
-    });
-    document.getElementById('obs_hide')?.addEventListener('click', () => {
-        animateButtonToggleHide("obs_hide", "obs-form-grid");
-    });
-    document.getElementById('autoconnect')?.addEventListener('change', toggleAutoConnect);
-    document.getElementById('blinking_enabled')?.addEventListener('change', toggleBlinking);
-    document.getElementById('user_mute_behavior')?.addEventListener('change', checkMutedBehavior);
-    document.getElementById('user_mute_behavior_text')?.addEventListener('click', toggleMuteBehavior);
 });

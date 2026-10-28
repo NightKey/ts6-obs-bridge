@@ -370,11 +370,5 @@ class OBSConnector(BaseConnector):
         await self.send(batch_request, OpCode.RequestBatch)
         await self.get_message(OpCode.RequestBatchResponse)
 
-    @async_wrapped
-    async def toggle_deafen(self, is_deafened: bool):
-        self.logger.debug(f"Toggling deafen to {is_deafened}")
-        await self.set_all_user_to(UserStatus.Muted if is_deafened else UserStatus.Quiet, only_present=True)
-
-
     def get_scene_map(self) -> dict:
         return {"connected": self.is_connected, "message_queue":self.message_queue.qsize(), "scenes":[{"name": name, "present": scene.enabled, "blinking":self.blinking_tasks.get(name, None) is not None, "all": [{"name":x.itemName, "enabled":x.enabled, "subItems": [{"name":xx.itemName, "enable":xx.enabled} for kk, xx in x.sub_items.items()]} for k, x in scene.sub_items.items()]} for name, scene in self.user_scenes.items()]}

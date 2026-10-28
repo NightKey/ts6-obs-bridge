@@ -6,7 +6,7 @@ from . import Settings, TeamSpeakSettings, OBSSettings
 class Database(DBManager):
     @property
     def current_version(self) -> Version:
-        return Version(0, 0, 6)
+        return Version(0, 0, 7)
 
     @DBManager.async_database_safe
     @DBManager.async_during_init
@@ -58,6 +58,15 @@ class Database(DBManager):
                 )
                 await self.db.commit()
                 version = Version(0, 0, 6)
+            if version == Version(0, 0, 6):
+                await self.db.execute(
+                    """ALTER TABLE settings ADD COLUMN speak_start_animation_enabled INTEGER DEFAULT 0;"""
+                )
+                await self.db.execute(
+                    """ALTER TABLE settings ADD COLUMN speak_end_animation_enabled INTEGER DEFAULT 0;"""
+                )
+                await self.db.commit()
+                version = Version(0, 0, 7)
         return True
 
     @DBManager.async_database_safe
@@ -81,7 +90,9 @@ class Database(DBManager):
                 high_blink_interval INTEGER DEFAULT 0,
                 blink_time INTEGER DEFAULT 0,
                 blink_enabled INTEGER DEFAULT 0,
-                user_mute_behavior INTEGER DEFAULT 1
+                user_mute_behavior INTEGER DEFAULT 1,
+                speak_start_animation_enabled INTEGER DEFAULT 0,
+                speak_end_animation_enabled INTEGER DEFAULT 0
             ) STRICT;
             """
         )
@@ -92,7 +103,7 @@ class Database(DBManager):
     @DBManager.async_timed
     async def get_settings(self) -> Settings | None:
         result = await self.db.execute_fetchall(
-            f"""SELECT teamspeak_ip, teamspeak_port, teamspeak_api, user_mute_behavior, obs_ip, obs_port, obs_password, low_blink_interval, high_blink_interval, blink_time, blink_enabled, autoconnect, host, port FROM settings"""
+            f"""SELECT teamspeak_ip, teamspeak_port, teamspeak_api, user_mute_behavior, obs_ip, obs_port, obs_password, low_blink_interval, high_blink_interval, blink_time, blink_enabled, autoconnect, host, port, speak_start_animation_enabled, speak_end_animation_enabled FROM settings"""
         )
         if len(result) == 0:
             self.logger.warning("No settings found")
@@ -118,7 +129,9 @@ class Database(DBManager):
             obs=obs_settings,
             autoconnect=settings[11],
             host=settings[12],
-            port=settings[13]
+            port=settings[13],
+            speak_start_animation_enabled=settings[14],
+            speak_end_animation_enabled=settings[15],
         )
 
     @DBManager.async_database_safe
@@ -126,8 +139,8 @@ class Database(DBManager):
     async def upsert_settings(self, settings: Settings) -> bool:
         if settings.teamspeak is None or settings.obs is None: return False
         await self.db.execute(
-            f"""INSERT OR REPLACE INTO settings (teamspeak_ip, teamspeak_port, teamspeak_api, user_mute_behavior, obs_ip, obs_port, obs_password, low_blink_interval, high_blink_interval, blink_time, blink_enabled, autoconnect, host, port)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            f"""INSERT OR REPLACE INTO settings (teamspeak_ip, teamspeak_port, teamspeak_api, user_mute_behavior, obs_ip, obs_port, obs_password, low_blink_interval, high_blink_interval, blink_time, blink_enabled, autoconnect, host, port, speak_start_animation_enabled, speak_end_animation_enabled)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 settings.teamspeak.ip,
@@ -143,7 +156,9 @@ class Database(DBManager):
                 settings.obs.blink_enabled,
                 settings.autoconnect,
                 settings.host,
-                settings.port
+                settings.port,
+                settings.speak_start_animation_enabled,
+                settings.speak_end_animation_enabled
             )
         )
         await self.db.commit()

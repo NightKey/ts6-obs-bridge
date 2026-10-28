@@ -11,6 +11,8 @@ class Settings:
     autoconnect: bool = field(default=False)
     host: str = field(default="127.0.0.1")
     port: int = field(default=12345)
+    speak_start_animation_enabled: bool = field(default=False)
+    speak_end_animation_enabled: bool = field(default=False)
 
     @staticmethod
     def from_json(json: Dict[str, Any]) -> 'Settings':
@@ -34,7 +36,9 @@ class Settings:
             obs=obs_settings,
             autoconnect= bool(json.get("autoconnect", 0)),
             host=json.get("host", "127.0.0.1"),
-            port=json.get("port", 12345)
+            port=json.get("port", 12345),
+            speak_start_animation_enabled = json.get("speak_start_animation_enabled", False),
+            speak_end_animation_enabled = json.get("speak_end_animation_enabled", False),
         )
 
     def to_json(self) -> Dict[str, Any]:
@@ -53,6 +57,8 @@ class Settings:
             "autoconnect" : self.autoconnect,
             "host": self.host,
             "port": self.port,
+            "speak_start_animation_enabled": self.speak_start_animation_enabled,
+            "speak_end_animation_enabled": self.speak_end_animation_enabled,
         }
 
     def which_changed(self, other: 'Settings') -> Tuple[bool, bool]:
@@ -68,7 +74,9 @@ class Settings:
             autoconnect=self.autoconnect,
             host=self.host,
             port=self.port,
+            speak_start_animation_enabled=self.speak_start_animation_enabled,
+            speak_end_animation_enabled=self.speak_end_animation_enabled,
         )
 
     def __str__(self) -> str:
-        return f"Settings[{self.teamspeak} {self.obs} autoconnect: {self.autoconnect} host: {self.host} port: {self.port}]"
+        return f"Settings[{self.teamspeak} {self.obs} autoconnect: {self.autoconnect} host: {self.host} port: {self.port} speak_start_animation_enabled: {self.speak_start_animation_enabled} speak_end_animation_enabled: {self.speak_end_animation_enabled}]"

@@ -152,6 +152,12 @@ a:visited {
     grid-column: 1 / -1;
 }
 
+.spaced {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.3rem;
+}
+
 label {
     font-size: 0.85rem;
     font-weight: 600;
@@ -592,6 +598,13 @@ input:checked + .slider:before {
 .hide-button {
     color: var(--color-sec-light);
     cursor: pointer;
+    border-radius: 8px;
+    background: var(--color-main-dark);
+    border: 1px solid var(--border-subtle);
+}
+
+.hide-button:hover {
+    background: var(--color-main-light);
 }
 
 .hidden {
@@ -600,10 +613,12 @@ input:checked + .slider:before {
 
 .hide-button.show {
     rotate: 0deg;
+    padding: 0.3rem 0.8rem;
 }
 
 .hide-button.hide {
     rotate: 90deg;
+    padding: 0.4rem 0.7rem;
 }
 
 /* Dynamic status coloring managed via our logic thresholds */

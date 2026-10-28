@@ -122,7 +122,7 @@
                         <span class="slider"></span>
                     </label>
                 </div>
-                <div id="blinking-toggle-group" class="form-grid">
+                <div id="blinking-form-grid" class="form-grid">
                     <div id="blinking-single-slider" class="form-group">
                         <div class="slider-header">
                             <label for="blink_time">Blink Time</label>
@@ -141,6 +141,35 @@
                             <div class="range-slider-track" id="rangeTrack"></div>
                             <input type="range" id="low_blink_interval" name="low_blink_interval" min="100" max="10000" step="50" value="1000" class="range-input">
                             <input type="range" id="high_blink_interval" name="high_blink_interval" min="100" max="10000" step="50" value="5000" class="range-input">
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="config-section">
+                <div class="section-title-container">
+                    <div class="section-title">
+                        <h2>Speaking Animations</h2>
+                    </div>
+                    <div id="speaking-animation-hide" class="hide-button show">&gt;</div>
+                </div>
+                <div id="speaking-animation-form-grid" class="form-grid hidden">
+                    <div class="form-group full-width">
+                        <div class="spaced">
+                            <label for="start_speaking_animation" class="clickable">Start animation</label>
+                            <label class="switch">
+                                <input type="checkbox" id="start_speaking_animation">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group full-width">
+                        <div class="spaced">
+                            <label for="stop_speaking_animation" class="clickable">Stop animation</label>
+                            <label class="switch">
+                                <input type="checkbox" id="stop_speaking_animation">
+                                <span class="slider"></span>
+                            </label>
                         </div>
                     </div>
                 </div>

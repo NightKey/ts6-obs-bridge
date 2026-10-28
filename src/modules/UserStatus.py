@@ -3,7 +3,9 @@ from enum import Enum
 
 class UserStatus(Enum):
     Quiet = "quiet"
+    StartSpeaking = "startSpeaking"
     Speaking = "speaking"
+    StopSpeaking = "stopSpeaking"
     Muted = "muted"
     Blinking = "blinking"
     Left = "left"
@@ -21,7 +23,9 @@ class UserStatus(Enum):
     @staticmethod
     def from_string(string: str) -> 'UserStatus':
         if string == "quiet": return UserStatus.Quiet
+        if string == "startSpeaking": return UserStatus.StartSpeaking
         if string == "speaking": return UserStatus.Speaking
+        if string == "stopSpeaking": return UserStatus.StopSpeaking
         if string == "muted": return UserStatus.Muted
         if string == "left": return UserStatus.Left
         if string == "blinking": return UserStatus.Blinking

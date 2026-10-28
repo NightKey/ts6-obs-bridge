@@ -1,4 +1,4 @@
-from typing import Callable, Tuple, Coroutine, Any, List
+from typing import Callable, Tuple, Coroutine, Any, cast
 
 from smdb_logger import Logger
 from smdb_web_server import HTMLServer, UrlData, Protocol, KnownError, ResponseCode
@@ -26,6 +26,8 @@ class WebUI:
     change_webui_settings_callback: Callable[[str, int], Coroutine[Any, Any, None]]
     set_blinking_callback: Callable[[bool], Coroutine[Any, Any, None]]
     set_user_mute_behavior_callback: Callable[[bool], Coroutine[Any, Any, None]]
+    start_speaking_animation_callback: Callable[[bool], Coroutine[Any, Any, None]]
+    stop_speaking_animation_callback: Callable[[bool], Coroutine[Any, Any, None]]
     version: str
 
 
@@ -46,6 +48,8 @@ class WebUI:
             change_webui_settings_callback: Callable[[str, int], Coroutine[Any, Any, None]],
             set_blinking_callback: Callable[[bool], Coroutine[Any, Any, None]],
             set_user_mute_behavior_callback: Callable[[bool], Coroutine[Any, Any, None]],
+            start_speaking_animation_callback: Callable[[bool], Coroutine[Any, Any, None]],
+            stop_speaking_animation_callback: Callable[[bool], Coroutine[Any, Any, None]],
             version: str,
             host: str,
             port: int
@@ -65,6 +69,8 @@ class WebUI:
         self.change_webui_settings_callback = change_webui_settings_callback
         self.set_blinking_callback = set_blinking_callback
         self.set_user_mute_behavior_callback = set_user_mute_behavior_callback
+        self.start_speaking_animation_callback = start_speaking_animation_callback
+        self.stop_speaking_animation_callback = stop_speaking_animation_callback
         self.server = HTMLServer(host=host, port=port, root_path=path.dirname(__file__), logger=logger, title="Stream Control Panel")
         self.version = version
         # Main page
@@ -73,6 +79,8 @@ class WebUI:
         self.server.add_url_rule("/toggle_autoconnect", self.toggle_autoconnect, Protocol.Post)
         self.server.add_url_rule("/set_blinking", self.set_blinking, Protocol.Post)
         self.server.add_url_rule("/set_user_mute_behavior", self.set_user_mute_behavior, Protocol.Post)
+        self.server.add_url_rule("/start_speaking_animation", self.start_speaking_animation, Protocol.Post)
+        self.server.add_url_rule("/stop_speaking_animation", self.stop_speaking_animation, Protocol.Post)
         self.server.add_url_rule("/get_settings", self.get_settings, disable_cache=True)
         self.server.add_url_rule("/get_state", self.get_state, disable_cache=True)
         self.server.add_url_rule("/connect_all", self.connect_all)
@@ -98,13 +106,13 @@ class WebUI:
         return self.server.render_template_file(name="index.html", page_title=f"Stream Control Panel v{self.version}")
 
     def teamspeak(self, _) -> str:
-        return self.server.render_static_file("teamspeak")
+        return cast(str, self.server.render_static_file("teamspeak"))
 
     def obs(self, _) -> str:
-        return self.server.render_static_file("obs")
+        return cast(str, self.server.render_static_file("obs"))
 
     def webui(self, _) -> str:
-        return self.server.render_static_file("webui")
+        return cast(str, self.server.render_static_file("webui"))
 
     def ts_user_map(self, _) -> str:
         return dumps(self.ts_user_map_callback())
@@ -112,21 +120,23 @@ class WebUI:
     def obs_scene_map(self, _) -> str:
         return dumps(self.obs_scene_map_callback())
 
-    async def set_blinking(self, url_data: UrlData) -> str:
+    async def set_blinking(self, url_data: UrlData) -> None:
         await self.set_blinking_callback(loads(url_data.data.decode())['value'])
-        return "{}"
 
-    async def set_user_mute_behavior(self, url_data: UrlData) -> str:
+    async def set_user_mute_behavior(self, url_data: UrlData) -> None:
         await self.set_user_mute_behavior_callback(loads(url_data.data.decode())['value'])
-        return "{}"
 
-    async def update_settings(self, url_data: UrlData) -> str:
+    async def update_settings(self, url_data: UrlData) -> None:
         await self.update_settings_callback(Settings.from_json(loads(url_data.data.decode())))
-        return "{}"
 
-    async def toggle_autoconnect(self, url_data: UrlData) -> str:
+    async def toggle_autoconnect(self, url_data: UrlData) -> None:
         await self.toggle_autoconnect_callback(loads(url_data.data.decode())["value"])
-        return "{}"
+
+    async def start_speaking_animation(self, url_data: UrlData) -> None:
+        await self.start_speaking_animation_callback(loads(url_data.data.decode())["value"])
+
+    async def stop_speaking_animation(self, url_data: UrlData) -> None:
+        await self.stop_speaking_animation_callback(loads(url_data.data.decode())["value"])
 
     def get_settings(self, _: UrlData) -> str:
         settings = self.get_settings_callback()

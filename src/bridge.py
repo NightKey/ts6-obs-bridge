@@ -129,6 +129,8 @@ class Bridge:
             change_webui_settings_callback=self.change_webui_settings,
             set_blinking_callback=self.set_blinking,
             set_user_mute_behavior_callback=self.set_user_mute_behavior,
+            start_speaking_animation_callback=self.start_speaking_animation_callback,
+            stop_speaking_animation_callback=self.stop_speaking_animation_callback,
             version=self.version,
             host=self.settings.host,
             port=self.settings.port
