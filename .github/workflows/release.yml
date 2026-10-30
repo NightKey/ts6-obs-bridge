@@ -24,8 +24,14 @@ jobs:
           $branch = $env:GITHUB_REF_NAME
           if ($branch) { $branch = $branch.Substring(0,1).ToUpper() + $branch.Substring(1) }
           $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+          if ($branch -eq 'beta'){
+             $nametext="$version $branch $env:GITHUB_RUN_ID"
+          } else {
+             $nametext="$version $branch"
+          }
           $lines = @(
             "version=$version $branch $env:GITHUB_RUN_ID",
+            "name=$nametext",
             "tag=v$version-$branch-$env:GITHUB_RUN_NUMBER"
           )
           [System.IO.File]::AppendAllText($env:GITHUB_ENV, (($lines -join "`n") + "`n"), $utf8NoBom)
@@ -58,7 +64,7 @@ jobs:
           tag_name: ${{ env.tag }}
           target_commitish: ${{ github.sha }}
           generate_release_notes: true
-          name: Release ${{ env.version }}
+          name: Release ${{ env.name }}
           draft: false
           prerelease: ${{ github.ref_name == 'beta' }}
           files: |
