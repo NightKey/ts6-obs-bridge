@@ -17,7 +17,7 @@ from modules import Settings, UserStatus, WebUI, Database, OBSConnector, TeamSpe
 
 def async_log_wrapped(func):
     @wraps(func)
-    async def wrapper(self: Bridge, *args, **kwargs):
+    async def wrapper(self: 'Bridge', *args, **kwargs):
         self.logger.trace(f"Entering function {func.__name__}")
         try:
             func_result = await func(self, *args, **kwargs)
