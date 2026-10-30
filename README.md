@@ -34,7 +34,7 @@ Two options are available:
 ![usermutebehaviour](resources/teamspeak_usermutebehavior.png)
 
 ## Speaking Animations
-These settings enable two more user state. `startSpeaking` (half a second before `speaking` state is set) and `stopSpeaking` (half a second before `quiet` state is set).
+These settings enable two more user state. `startSpeaking` (30 ms before `speaking` state is set) and `stopSpeaking` (30 ms before `quiet` state is set).
 
 ![speakinganimation](resources/speaking_animations.png)
 
@@ -64,7 +64,8 @@ Under this scene you can set up the following sources:
  - [[ANYTHING]-muted](#muted)
  - [[ANYTHING]-speaking](#speaking)
  - [[ANYTHING]-quiet](#quiet)
- - [[ANYThING]-[muted/speaking/quiet]-blinking](#blinking)
+ - [[ANYTHING]-[muted/speaking/quiet]-blinking](#blinking)
+ - [[ANYTHING]-[startSpeaking/stopSpeaking]](#speaking-animations)
 
 Where `[ANYTHING]-` is filtered out so you can have multiple scenes set up for multiple users. For ease of use, `[USERNAME]` is recommended.
 
