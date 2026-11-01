@@ -15,8 +15,6 @@ from smdb_web_server import KnownError
 from modules import Settings, UserStatus, WebUI, Database, OBSConnector, TeamSpeak6Connector, OBSException, \
     TeamSpeakException, show_open_calls
 
-#Make threads for Teamspeak, OBS and web UI, bridge should bridge them together with requests
-
 def async_log_wrapped(func):
     @wraps(func)
     async def wrapper(self: 'Bridge', *args, **kwargs):
