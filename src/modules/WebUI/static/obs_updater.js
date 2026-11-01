@@ -1,16 +1,26 @@
-const endpoint = '/get_obs_scenes';
-const reinitEndpoint = '/reinit_obs'
+const scenes = '/obs_scenes';
+const reinitEndpoint = '/reinit_obs';
+const currentGroup = "/current_group"
+const groups = '/groups';
+const group = "/group";
 const pollInterval = 500;
+let currentSelectedGroup = "default";
+
+async function apiFetch(url, params = {}, doThrow = true) {
+    const response = await fetch(url, params);
+    if (!response.ok) {
+        console.error(`api fetch failed on ${url} with status ${response.status}`);
+        if (doThrow) throw response;
+        else return null;
+    }
+
+    // Unpack the new response object layout
+    return await response.json();
+}
 
 async function fetchObsData() {
     try {
-        const response = await fetch(endpoint);
-        if (!response.ok) {
-            throw response;
-        }
-
-        // Unpack the new response object layout
-        const data = await response.json();
+        const data = await apiFetch(scenes);
 
         updateMessageQueue(data.message_queue);
         setSyncIndicator(data.connected);
@@ -29,6 +39,26 @@ async function fetchObsData() {
             <div class="empty-state">
                 ${message}
             </div>`;
+    }
+}
+
+async function fetchGroups() {
+    try {
+        const selector = document.getElementById('group-select');
+        if (!selector) return;
+        selector.innerHTML = '';
+        const selectedGroup = await apiFetch(currentGroup);
+        currentSelectedGroup = selectedGroup.group;
+        const data = await apiFetch(groups);
+        data.forEach((group) => {
+            const element = document.createElement("option");
+            element.value = group;
+            element.innerText = group;
+            element.selected = currentSelectedGroup === group;
+            selector.appendChild(element);
+        });
+    } catch (error) {
+        console.error("Failed to fetch OBS groups:", error);
     }
 }
 
@@ -114,6 +144,11 @@ function renderScenes(scenes) {
                 </div>
                 ${scene.blinking ? '<span class="status-badge">👁️</span>': ''}
                 <span class="status-badge">${badgeText}</span>
+                <span class="${currentSelectedGroup !== scene.group ? ' crossed-out' : ''}">
+                    <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <path fill="currentColor" d="M5.75 2a.75.75 0 0 0-.75.75v11.5c0 1.24 1 2.25 2.25 2.25H9.5v3a2.5 2.5 0 1 0 5 0v-3h2.25c1.24 0 2.25-1 2.25-2.25V2.75a.75.75 0 0 0-.75-.75zm.75 9V3.5h6v1.75a.75.75 0 1 0 1.5 0V3.5h1v2.75a.75.75 0 1 0 1.5 0V3.5h1V11zm0 3.25V12.5h11v1.75c0 .41-.34.75-.75.75h-3a.75.75 0 0 0-.75.75v3.75a1 1 0 0 1-2 0v-3.75a.75.75 0 0 0-.75-.75h-3a.75.75 0 0 1-.75-.75"/>
+                    </svg>
+                </span>
             </li>
         `;
     }).join('');
@@ -128,21 +163,29 @@ async function reinitializeObs() {
         reinitBtn.disabled = true;
         reinitBtn.classList.add('spinning');
 
-        const response = await fetch(reinitEndpoint, { method: 'POST' }); // Adjust to method: 'GET' if required by backend
-
-        if (!response.ok) {
-            console.error(`Reinit failed with status: ${response.status}`);
-            return;
-        }
+        const result = await apiFetch(reinitEndpoint, { method: 'POST' }, false);
+        if (result === null) return;
 
         // Immediately update data loop seamlessly for the user
         await fetchObsData();
+        await fetchGroups();
     } catch (error) {
         console.error("Failed to reinitialize OBS backend:", error);
     } finally {
         // Restore interactive state
         reinitBtn.disabled = false;
         reinitBtn.classList.remove('spinning');
+    }
+}
+
+async function setGroup() {
+    const element = document.getElementById('group-select');
+    try {
+        await apiFetch(group, { method: 'POST', body: JSON.stringify({'value': element.value }) });
+    } catch (e) {
+        console.error(`Failed to set group to ${element.value}`, e.message);
+    } finally {
+        setTimeout(fetchGroups, 500);
     }
 }
 
@@ -156,8 +199,10 @@ function escapeHTML(str) {
 
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('refreshObsBtn')?.addEventListener('click', reinitializeObs);
+    document.getElementById("group-select")?.addEventListener('change', setGroup);
 });
 
 // Kickstart processing loop orchestration
-fetchObsData();
+fetchGroups().then();
+fetchObsData().then();
 setInterval(fetchObsData, pollInterval);

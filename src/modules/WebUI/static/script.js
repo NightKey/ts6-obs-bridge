@@ -80,7 +80,7 @@ function updateStatusMarker(elementId, isConnected) {
 
 // 1. On load: Fetch existing settings and populate the form
 async function loadSettings() {
-    const data = await apiFetch('get_settings');
+    const data = await apiFetch('settings');
     if (!data) return;
 
     const fields = [
@@ -276,7 +276,7 @@ let delay_count = 0;
 let last_teamspeak_status = false;
 let last_obs_status = false;
 async function checkConnectionState() {
-    const state = await apiFetch('get_state');
+    const state = await apiFetch('state');
     if (!state) return;
 
     // Checks key cases exactly matching your specs: "teamspeak_connected" and "OBS_connected"
@@ -432,7 +432,7 @@ async function connectAllConnections() {
     setMarkerToConnecting('ts_status');
     setMarkerToConnecting('obs_status');
 
-    await apiFetch('connect_all');
+    await apiFetch('connect_all', { method: 'POST' });
 
     if (btn) btn.disabled = false;
     delay_count = 3;
@@ -453,7 +453,7 @@ async function connectToTeamspeak() {
     if (btn) btn.disabled = true;
     setMarkerToConnecting('ts_status');
 
-    await apiFetch('connect_teamspeak');
+    await apiFetch('connect_teamspeak', { method: 'POST' });
 
     if (btn) btn.disabled = false;
     delay_count = 3;
@@ -466,7 +466,7 @@ async function connectToOBS() {
     if (btn) btn.disabled = true;
     setMarkerToConnecting('obs_status');
 
-    await apiFetch('connect_obs');
+    await apiFetch('connect_obs', { method: 'POST' });
 
     if (btn) btn.disabled = false;
     delay_count = 3;
@@ -482,7 +482,7 @@ async function stopAllConnections() {
     if (last_teamspeak_status) setMarkerToConnecting('ts_status', true);
     if (last_obs_status) setMarkerToConnecting('obs_status', true);
 
-    await apiFetch("stop_all");
+    await apiFetch("stop_all", { method: 'POST' });
 
     if (btn) btn.disabled = false;
     delay_count = 3;

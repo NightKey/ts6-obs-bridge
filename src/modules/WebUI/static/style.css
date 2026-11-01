@@ -432,14 +432,14 @@ input:checked + .slider:before {
 /* ==========================================================================
    3. TEAMSPEAK & OBS WIDGET NAMESPACED THEMING (.voice-widget-theme)
    ========================================================================== */
-.voice-widget-theme {
+.widget-theme {
     background-color: var(--color-main-dark);
     display: flex;
     justify-content: center;
     align-items: flex-start;
 }
 
-.voice-widget-theme .container {
+.widget-theme .container {
     width: 100%;
     max-width: 500px;
     background-color: rgba(90, 101, 133, 0.1);
@@ -453,22 +453,23 @@ input:checked + .slider:before {
     left: 40%;
 }
 
-.voice-widget-theme .header {
+.widget-theme .header {
     padding: 1.25rem 1.5rem;
     background: linear-gradient(135deg, var(--color-sec-dark), rgba(23, 79, 117, 0.4));
     border-bottom: 1px solid var(--border-subtle);
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap;
 }
 
-.voice-widget-theme .header h1 {
+.widget-theme .header h1 {
     font-size: 1.15rem;
     font-weight: 600;
     color: var(--text-primary);
 }
 
-.voice-widget-theme #live-indicator {
+.widget-theme #live-indicator {
     display: flex;
     align-items: center;
     font-size: 0.7rem;
@@ -481,7 +482,7 @@ input:checked + .slider:before {
     border-radius: 6px;
 }
 
-.voice-widget-theme #live-indicator::before {
+.widget-theme #live-indicator::before {
     content: '';
     display: inline-block;
     width: 6px;
@@ -491,26 +492,26 @@ input:checked + .slider:before {
     animation: modern-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-.voice-widget-theme #live-indicator.connected::before {
+.widget-theme #live-indicator.connected::before {
     background-color: var(--status-green);
 }
 
-.voice-widget-theme #live-indicator.disconnected::before {
+.widget-theme #live-indicator.disconnected::before {
     background-color: var(--status-yellow);
 }
 
-.voice-widget-theme #live-indicator.failed::before {
+.widget-theme #live-indicator.failed::before {
     background-color: var(--status-red);
 }
 
-.voice-widget-theme .user-list {
+.widget-theme .user-list {
     list-style: none;
     max-height: 450px;
     overflow-y: auto;
     padding: 0.75rem;
 }
 
-.voice-widget-theme .user-item {
+.widget-theme .user-item {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -522,29 +523,29 @@ input:checked + .slider:before {
     transition: all 0.2s ease;
 }
 
-.voice-widget-theme .user-info {
+.widget-theme .user-info {
     display: flex;
     align-items: center;
     gap: 14px;
 }
 
-.voice-widget-theme .user-details {
+.widget-theme .user-details {
     display: flex;
     flex-direction: column;
 }
 
-.voice-widget-theme .user-name {
+.widget-theme .user-name {
     font-weight: 600;
     font-size: 0.95rem;
     color: var(--color-sec-light);
 }
 
-.voice-widget-theme .user-id {
+.widget-theme .user-id {
     font-size: 0.75rem;
     color: var(--text-muted);
 }
 
-.voice-widget-theme .avatar {
+.widget-theme .avatar {
     border-radius: 10px;
     padding: 0.3rem;
     display: flex;
@@ -558,7 +559,7 @@ input:checked + .slider:before {
     transition: all 0.2s ease;
 }
 
-.voice-widget-theme .status-badge {
+.widget-theme .status-badge {
     font-size: 0.7rem;
     padding: 4px 10px;
     border-radius: 6px;
@@ -626,34 +627,41 @@ input:checked + .slider:before {
 .queue-warning { color: var(--status-red); }
 
 /* Layout fix for secondary layout adjustments */
-.voice-widget-theme .header-controls {
+.widget-theme .header-controls {
     display: flex;
     align-items: center;
     gap: 8px;
+}
+
+.widget-theme .after-controls {
+    display: flex;
+    align-items: center;
+    padding-top: 0.5em;
+    flex-basis: 100%;
 }
 
 /* ==========================================================================
    4. STATS-DRIVEN MODIFIERS & STATES (Green / Red / Highlights Mapping)
    ========================================================================== */
 /* Speaking / Active (Green Status Marker) */
-.voice-widget-theme .user-item.status-present { background-color: rgba(46, 204, 113, 0.06); border-color: rgba(46, 204, 113, 0.15); }
-.voice-widget-theme .user-item.status-present .avatar { border-color: var(--status-green); color: var(--status-green); background-color: rgba(46, 204, 113, 0.1); }
-.voice-widget-theme .user-item.status-present .avatar .user-name { color: #ffffff; }
-.voice-widget-theme .user-item.status-present .status-badge { background-color: rgba(46, 204, 113, 0.15); color: var(--status-green); break-before: always; margin-left: 0.3rem }
+.widget-theme .user-item.status-present { background-color: rgba(46, 204, 113, 0.06); border-color: rgba(46, 204, 113, 0.15); }
+.widget-theme .user-item.status-present .avatar { border-color: var(--status-green); color: var(--status-green); background-color: rgba(46, 204, 113, 0.1); }
+.widget-theme .user-item.status-present .avatar .user-name { color: #ffffff; }
+.widget-theme .user-item.status-present .status-badge { background-color: rgba(46, 204, 113, 0.15); color: var(--status-green); break-before: always; margin-left: 0.3rem }
 
 /* Muted / Suspended (Red Status Marker + Highlight Palette Color) */
-.voice-widget-theme .user-item.status-muted .avatar { border-color: var(--status-red); color: var(--status-red); }
-.voice-widget-theme .user-item.status-muted .status-badge { background-color: var(--color-highlight); color: #ffffff; break-before: always; margin-left: 0.3rem }
+.widget-theme .user-item.status-muted .avatar { border-color: var(--status-red); color: var(--status-red); }
+.widget-theme .user-item.status-muted .status-badge { background-color: var(--color-highlight); color: #ffffff; break-before: always; margin-left: 0.3rem }
 
 /* Left Channel (Muted Special Dark Tones) */
-.voice-widget-theme .user-item.status-left { opacity: 0.45; }
-.voice-widget-theme .user-item.status-left .avatar { border-color: var(--color-special-dark); color: var(--color-special-dark); }
-.voice-widget-theme .user-item.status-left .status-badge { background-color: rgba(105, 81, 99, 0.2); color: var(--color-special-light); break-before: always; margin-left: 0.3rem }
+.widget-theme .user-item.status-left { opacity: 0.45; }
+.widget-theme .user-item.status-left .avatar { border-color: var(--color-special-dark); color: var(--color-special-dark); }
+.widget-theme .user-item.status-left .status-badge { background-color: rgba(105, 81, 99, 0.2); color: var(--color-special-light); break-before: always; margin-left: 0.3rem }
 
 /* ==========================================================================
    5. OBS NESTED METADATA EXTENSIONS
    ========================================================================== */
-.voice-widget-theme .scene-sources {
+.widget-theme .scene-sources {
     margin-top: 0.6rem;
     padding-left: 0.25rem;
     display: flex;
@@ -661,7 +669,7 @@ input:checked + .slider:before {
     gap: 6px;
 }
 
-.voice-widget-theme .source-tag {
+.widget-theme .source-tag {
     font-size: 0.65rem;
     font-weight: 500;
     background-color: var(--color-main-dark);
@@ -671,7 +679,7 @@ input:checked + .slider:before {
     border: 1px solid var(--border-subtle);
 }
 
-.voice-widget-theme .user-item.status-speaking .source-tag {
+.widget-theme .user-item.status-speaking .source-tag {
     color: var(--color-sec-light);
     border-color: rgba(165, 201, 226, 0.25);
     background-color: rgba(23, 79, 117, 0.3);
@@ -688,7 +696,7 @@ input:checked + .slider:before {
 /* ==========================================================================
    7. REFRESH BUTTON UTILITY STYLES
    ========================================================================== */
-.voice-widget-theme .refresh-btn {
+.widget-theme .refresh-btn {
     padding: 4px 10px;
     font-size: 0.85rem;
     min-width: unset;
@@ -701,7 +709,7 @@ input:checked + .slider:before {
 }
 
 /* Optional rotation animation when clicked */
-.voice-widget-theme .refresh-btn.spinning {
+.widget-theme .refresh-btn.spinning {
     animation: modern-pulse 0.5s ease infinite;
     opacity: 0.6;
     pointer-events: none;
@@ -941,4 +949,154 @@ input:checked + .slider:before {
 .tooltip:hover .tooltip-text {
     visibility: visible;
     opacity: 1;
+}
+
+/* ==========================================================================
+   11. NATIVE <select> STYLING
+   Append to style.css. CSS only, no markup or JS changes needed:
+   every existing <select> picks this up automatically.
+   ========================================================================== */
+
+select {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    font-family: inherit;
+    font-size: 0.95rem;
+    color: #ffffff;
+    color-scheme: dark; /* dark popup list and scrollbar */
+    background-color: rgba(46, 52, 68, 0.6);
+    border: 1px solid var(--color-main-light);
+    border-radius: 6px;
+    padding: 0.75rem 2.75rem 0.75rem 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    /* Chevron in --color-sec-light (#A5C9E2) */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23A5C9E2' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.85rem center;
+    background-size: 18px 18px;
+}
+
+select:hover:not(:disabled) {
+    background-color: rgba(46, 52, 68, 0.85);
+    border-color: rgba(165, 201, 226, 0.5);
+}
+
+select:focus {
+    outline: none;
+    border-color: var(--color-sec-light);
+    box-shadow: 0 0 0 3px rgba(165, 201, 226, 0.15);
+}
+
+select:disabled {
+    background-color: rgba(46, 52, 68, 0.9);
+    border-color: rgba(90, 101, 133, 0.3);
+    color: var(--color-special-light);
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+/* Placeholder look when an empty-value option is selected */
+select:has(option[value=""]:checked) {
+    color: var(--color-special-light);
+}
+
+/* Validation (only after the user has interacted) */
+select:user-invalid {
+    border-color: var(--status-red);
+}
+
+/* ---- Option list (browsers allow only colors/fonts here) ---- */
+select option {
+    background-color: var(--color-main-dark);
+    color: #ffffff;
+    padding: 0.5rem 0.75rem;
+}
+
+select option:hover,
+select option:focus {
+    background-color: var(--color-main-light);
+    color: #ffffff;
+}
+
+select option:checked {
+    background-color: var(--color-sec-dark);
+    color: #ffffff;
+}
+
+select option:disabled {
+    color: var(--color-special-light);
+    opacity: 0.5;
+}
+
+select option[value=""] {
+    color: var(--color-special-light);
+}
+
+select optgroup {
+    background-color: var(--color-main-dark);
+    color: var(--color-sec-light);
+    font-size: 0.75rem;
+    font-weight: 700;
+    font-style: normal;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Optional: <option class="option-danger"> uses the highlight color */
+select option.option-danger:checked,
+select option.option-danger:hover {
+    background-color: var(--color-highlight);
+    color: #ffffff;
+}
+
+/* ---- Multi-select / listbox: no chevron ---- */
+select[multiple],
+select[size]:not([size="1"]) {
+    background-image: none;
+    padding: 0.35rem;
+    cursor: default;
+}
+
+select[multiple] option,
+select[size]:not([size="1"]) option {
+    border-radius: 4px;
+}
+
+.crossed-out {
+    --cross-color: var(--status-red);   /* use var(--color-highlight) for the darker red */
+    --cross-width: 2px;
+    --cross-gap: 3px;                   /* how far the circle sits outside the content */
+
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 1;                    /* keeps the ring a circle, not an oval */
+}
+
+/* The ring */
+.crossed-out::before {
+    content: "";
+    position: absolute;
+    inset: calc(var(--cross-gap) * -1);
+    border: var(--cross-width) solid var(--cross-color);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+/* The slash, top-left to bottom-right */
+.crossed-out::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: calc(100% + var(--cross-gap) * 2);
+    height: var(--cross-width);
+    background-color: var(--cross-color);
+    border-radius: var(--cross-width);
+    transform: translate(-50%, -50%) rotate(45deg);
+    pointer-events: none;
 }

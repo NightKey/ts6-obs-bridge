@@ -2,7 +2,7 @@ import asyncio
 from asyncio import timeout, Queue, create_task, Event, Task, Lock, sleep
 import base64
 import hashlib
-from typing import Dict
+from typing import Dict, List
 
 from smdb_logger import Logger
 from websockets import connect, ClientConnection, ConnectionClosedOK, ConnectionClosedError, State, CloseCode
@@ -21,6 +21,10 @@ class OBSConnector(BaseConnector):
     sync_lock = Lock()
     user_scenes: Dict[str, SceneItem] = {}
     requested_states: Dict[str, UserStatus] = {}
+    current_state: Dict[str, UserStatus] = {}
+    current_groups: Dict[str, str] = {}
+    current_group: str = "default"
+    select_group: str = "default"
     message_queue: Queue
     blink_enabled: bool
     low_blinking_interval: int
@@ -73,6 +77,9 @@ class OBSConnector(BaseConnector):
             self.logger.heartbeat(".")
             if not self.obs_initialized_event.is_set() and not self.stopped.is_set():
                 await self.__re_init_obs()
+            if self.select_group != self.current_group:
+                if not await self.set_group(self.select_group):
+                    self.select_group = self.current_group
             await asyncio.sleep(0.5)
         await self.snapshot_current_state()
         if not self.failed: await self.set_all_user_to(UserStatus.Left)
@@ -100,6 +107,7 @@ class OBSConnector(BaseConnector):
                 self.failed = True
                 self.stop_event.set()
                 self.stopped.set()
+        self.logger.debug(f"Watchdog exiting because {'stopped is set' if self.stopped.is_set() else 'no idea'}")
 
     @async_wrapped
     async def get_message(self, required_op_code: OpCode) -> dict:
@@ -190,13 +198,15 @@ class OBSConnector(BaseConnector):
         self.logger.debug("Snapshotting current state")
         for user, data in self.user_scenes.items():
             state = UserStatus.Left
-            for key, item in data.sub_items.items():
+            for key, item in data.current_subitems.items():
                 if item.enabled:
                     state = key
                     break
             if state == UserStatus.Left: continue
-            self.logger.debug(f"{user}: {state}")
+            group = data.current_group_name
+            self.logger.debug(f"{user}: [{group}] {state}")
             self.requested_states[user] = state
+            self.current_groups[user] = group
 
     @async_wrapped
     async def re_init_obs(self) -> None:
@@ -207,6 +217,8 @@ class OBSConnector(BaseConnector):
     @async_wrapped
     async def __re_init_obs(self) -> None:
         self.user_scenes.clear()
+        self.current_groups.clear()
+        self.select_group = "default"
         await self.init_obs()
 
     @async_wrapped
@@ -227,24 +239,19 @@ class OBSConnector(BaseConnector):
                 scene_user = name.split('ts6-obs-')[-1]
                 item = SceneItem(itemName=name, itemId=scene["sceneIndex"], enabled=scene_user in self.requested_states)
                 self.user_scenes[scene_user] = item
-                await self.set_all_to_known(item, scene_user)
+                await self.fill_and_set_sub_items(item, scene_user)
                 if item.enabled:
                     del self.requested_states[scene_user]
                     self.add_blinking_to_user(scene_user, item)
         self.obs_initialized_event.set()
 
     def add_blinking_to_user(self, scene_user: str, scene: SceneItem):
-        self.logger.debug(f"Adding blinking to user {scene_user}")
-        keys = list(scene.sub_items.keys())
-        for sub_item in scene.sub_items.values():
-            if len(sub_item.sub_items.keys()) >= 0:
-                keys.extend(sub_item.sub_items.keys())
-        self.logger.debug(f"Keys for user: {keys}")
-        if UserStatus.Blinking in keys and self.blink_enabled:
+        if scene.has_blinking and self.blink_enabled:
+            self.logger.debug(f"Adding blinking to user {scene_user}")
             self.blinking_tasks[scene_user] = create_task(self.blinking_task(scene_user), name=f"{scene_user} blinking task")
 
     @async_wrapped
-    async def set_all_to_known(self, scene: SceneItem, scene_user: str) -> None:
+    async def fill_and_set_sub_items(self, scene: SceneItem, scene_user: str) -> None:
         self.logger.debug(f"Setting {scene} to a known, all off state if no request was for that name")
         request = Request(
             requestType=RequestType.GetSceneItemList,
@@ -257,13 +264,17 @@ class OBSConnector(BaseConnector):
             self.logger.error(f"Failed to get item list for scene {scene.itemName}.")
             return
         requests = []
-        temp_statuses: Dict[UserStatus, SceneItem] = {}
+        temp_statuses: Dict[str, Dict[UserStatus, SceneItem]] = {}
         for item in response['d']["responseData"]["sceneItems"]:
             subitem_name = item["sourceName"].split('-')[-1]
+            if '-:' in item["sourceName"] and ':-' in item["sourceName"]:
+                group_name = item["sourceName"].split('-:')[-1].split(':-')[0]
+            else:
+                group_name = "default"
             sub_item = SceneItem(
                 itemName=subitem_name,
                 itemId=item["sceneItemId"],
-                enabled=scene_user in self.requested_states and subitem_name == self.requested_states[scene_user].value
+                enabled=scene_user in self.requested_states and subitem_name == self.requested_states[scene_user].value and group_name == self.current_group
             )
             self.logger.trace(f"Scene request created for {scene.itemName}-{subitem_name}. IsEnabled: {sub_item.enabled}")
             requests.append(sub_item.get_request(scene.itemName, self.request_id).to_request_dict())
@@ -275,19 +286,23 @@ class OBSConnector(BaseConnector):
                 parent_string = item["sourceName"].split('-')[-2]
                 try:
                     parent_status = UserStatus.from_string(parent_string)
+                    if group_name not in temp_statuses:
+                        temp_statuses[group_name] = {}
                     if parent_status not in scene.sub_items.keys():
-                        temp_statuses[parent_status] = sub_item
+                        temp_statuses[group_name][parent_status] = sub_item
                     else:
-                        scene.sub_items[parent_status].add_sub_item(status, sub_item)
-                        self.logger.debug(f"Scene subitem added to \"{scene.sub_items[parent_status].itemName}\": {sub_item.itemName}")
+                        scene.sub_items[group_name][parent_status].add_sub_item(status, sub_item)
+                        self.logger.debug(f"Scene subitem added to \"{scene.sub_items[group_name][parent_status].itemName}\": {sub_item.itemName} Group: {group_name}")
                     continue
                 except NotImplementedError:
                     self.logger.error(f"Scene name was incorrect: {item['sourceName']}. `{parent_string}` is not a valid state.")
                     continue
-            scene.add_sub_item(status, sub_item)
-        for key, value in temp_statuses.items():
-            scene.sub_items[key].add_sub_item(UserStatus(value.itemName), value)
-            self.logger.debug(f"Scene subitem added to {scene.sub_items[key].itemName}: {value.itemName}")
+            scene.add_sub_item(key=status, sub_item=sub_item, group_name=group_name)
+            self.logger.debug(f"Scene subitem added to {scene.itemName}: {sub_item.itemName} Group: {group_name}")
+        for group_name, items in temp_statuses.items():
+            for key, value in items.items():
+                scene.sub_items[group_name][key].add_sub_item(UserStatus(value.itemName), value)
+                self.logger.debug(f"Scene subitem added to {scene.sub_items[group_name][key].itemName}: {value.itemName} Group: {group_name}")
 
         if len(request) == 0: return
         batch_request = {
@@ -300,6 +315,7 @@ class OBSConnector(BaseConnector):
 
     @async_wrapped
     async def set_all_user_to(self, target_state: UserStatus, only_present: bool = False) -> None:
+        self.logger.debug(f"Setting all {len(self.user_scenes.keys())} user to {target_state}")
         for name in self.user_scenes.keys():
             await self.set_user_to(name, target_state, only_present)
 
@@ -318,13 +334,13 @@ class OBSConnector(BaseConnector):
             if user_scene is None or not user_scene.enabled:
                 self.logger.trace(f"User scene {user} was disabled")
                 continue
-            current_scene = [subitem for subitem in user_scene.sub_items.values() if subitem.enabled][0]
-            if UserStatus.Blinking not in current_scene.sub_items.keys():
+            current_scene = [subitem for subitem in user_scene.current_subitems.values() if subitem.enabled][0]
+            if UserStatus.Blinking not in current_scene.current_subitems.keys():
                 self.logger.trace(f"User scene {user} with active scene {current_scene.itemName} has no blinking")
                 continue
             await self.set_user_to(user, UserStatus(current_scene.itemName), sub_target_state=UserStatus.Blinking)
             await sleep(self.blink_time / 1000)
-            if len([subitem for subitem in user_scene.sub_items.values() if subitem.enabled]) > 0:
+            if len([subitem for subitem in user_scene.current_subitems.values() if subitem.enabled]) > 0:
                 self.logger.trace(f"No blinking subitems active")
                 continue
             await self.set_user_to(user, UserStatus(current_scene.itemName))
@@ -340,6 +356,7 @@ class OBSConnector(BaseConnector):
             return
         requests = []
         self.logger.debug(f"Setting {name} user's scene to {target_state.name} with substate {sub_target_state}")
+        self.current_state[name] = target_state
         scene = self.user_scenes.get(name, None)
         if scene is None or (not scene.enabled and only_present): return
         if target_state != UserStatus.Left and not scene.enabled:
@@ -349,14 +366,14 @@ class OBSConnector(BaseConnector):
             del self.blinking_tasks[name]
         scene.enabled = target_state.value != UserStatus.Left.value
 
-        for state, scene_item in scene.sub_items.items():
+        for state, scene_item in scene.current_subitems.items():
             scene_item_state = state == target_state and sub_target_state is None
             if scene_item.enabled and scene_item_state: return # Same state True, already set to that.
             if scene_item.enabled != scene_item_state:
                 scene_item.enabled = scene_item_state
                 requests.append(scene_item.get_request(scene.itemName, self.request_id).to_request_dict())
             # Main target handled
-            for sub_state, sub_scene_item in scene_item.sub_items.items():
+            for sub_state, sub_scene_item in scene_item.current_subitems.items():
                 sub_scene_item_state = sub_state == sub_target_state and state == target_state
                 if sub_scene_item.enabled and sub_scene_item_state: return # Same substate True, already set to that.
                 sub_scene_item.enabled = sub_scene_item_state
@@ -370,5 +387,43 @@ class OBSConnector(BaseConnector):
         await self.send(batch_request, OpCode.RequestBatch)
         await self.get_message(OpCode.RequestBatchResponse)
 
+    async def set_group(self, name: str) -> bool:
+        self.logger.debug(f"Setting {name} group")
+        success = False
+        for user, scene in self.user_scenes.items():
+            if name in scene.group_names:
+                current_state = UserStatus(self.current_state.get(user, UserStatus.Left.value))
+                await self.set_user_to(user, UserStatus.Left, only_present=True)
+                scene.change_group(name)
+                await self.set_user_to(user, current_state, only_present=False)
+                success = True
+        if not success: return False
+        self.current_group = name
+        return True
+
+    def get_groups(self) -> List[str]:
+        tmp = {}
+        for item in self.user_scenes.values():
+            for group_name in item.group_names:
+                tmp[group_name] = False
+        return list(tmp.keys())
+
     def get_scene_map(self) -> dict:
-        return {"connected": self.is_connected, "message_queue":self.message_queue.qsize(), "scenes":[{"name": name, "present": scene.enabled, "blinking":self.blinking_tasks.get(name, None) is not None, "all": [{"name":x.itemName, "enabled":x.enabled, "subItems": [{"name":xx.itemName, "enable":xx.enabled} for kk, xx in x.sub_items.items()]} for k, x in scene.sub_items.items()]} for name, scene in self.user_scenes.items()]}
+        return {
+            "connected": self.is_connected,
+            "message_queue":self.message_queue.qsize(),
+            "scenes":[{
+                "name": name,
+                "present": scene.enabled,
+                "group": scene.current_group_name,
+                "blinking":self.blinking_tasks.get(name, None) is not None,
+                "all": [{
+                    "name":x.itemName,
+                    "enabled":x.enabled,
+                    "subItems": [{
+                        "name":xx.itemName,
+                        "enabled":xx.enabled
+                    } for kk, xx in x.current_subitems.items()]
+                } for k, x in scene.current_subitems.items()]
+            } for name, scene in self.user_scenes.items()]
+        }

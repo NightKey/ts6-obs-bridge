@@ -61,13 +61,18 @@ When connected you will be able to click on the "CONNECTED" marker to open a dia
 ## OBS
 In OBS you will need to create a scene for every user with the name `ts6-obs-[USERNAME]` Where `[USERNAME]` should be the exact username on Team Speak.
 Under this scene you can set up the following sources:
- - [[ANYTHING]-muted](#muted)
- - [[ANYTHING]-speaking](#speaking)
- - [[ANYTHING]-quiet](#quiet)
- - [[ANYTHING]-[muted/speaking/quiet]-blinking](#blinking)
- - [[ANYTHING]-[startSpeaking/stopSpeaking]](#speaking-animations)
+ - [[ANYTHING]-[:GROUPNAME:]-muted](#muted)
+ - [[ANYTHING]-[:GROUPNAME:]-speaking](#speaking)
+ - [[ANYTHING]-[:GROUPNAME:]-quiet](#quiet)
+ - [[ANYTHING]-[:GROUPNAME:]-[muted/speaking/quiet]-blinking](#blinking)
+ - [[ANYTHING]-[:GROUPNAME:]-[startSpeaking/stopSpeaking]](#speaking-animations) _Optional states for Speaking Animations_
 
-Where `[ANYTHING]-` is filtered out so you can have multiple scenes set up for multiple users. For ease of use, `[USERNAME]` is recommended.
+Where `[ANYTHING]` is filtered out so you can have multiple scenes set up for multiple users. For ease of use, `[USERNAME]` is recommended. 
+And [:GROUPNAME:] is used for grouping together states for events (for example user-:Halloween:-quiet) where `-:` and `:-` are used as separator. 
+Later in the UI you will be able to set global group to show for every user.
+
+> [!INFO]
+> This group setting will only be valid while the program is not closed. When no group name is set, those will be assigned to the "default" group.
 
 ![obs_scenes](resources/obs_scenes.png)
 

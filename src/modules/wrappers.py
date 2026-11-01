@@ -14,7 +14,7 @@ def async_wrapped(func):
     @wraps(func)
     async def async_timed_wrapper(self: BaseConnector, *args, **kwargs):
         key = f"{self.name}.{func.__name__}"
-        self.logger.trace("Waiting for open_calls' lock")
+        self.logger.trace(f"Waiting for open_calls' lock for {key} ...")
         open_calls_lock.acquire()
         current_open = open_calls.get(key, 0)
         open_calls[key] = current_open + 1

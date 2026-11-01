@@ -1,4 +1,4 @@
-from typing import Callable, Tuple, Coroutine, Any, cast
+from typing import Callable, Tuple, Coroutine, Any, cast, List
 
 from smdb_logger import Logger
 from smdb_web_server import HTMLServer, UrlData, Protocol, KnownError, ResponseCode
@@ -28,6 +28,9 @@ class WebUI:
     set_user_mute_behavior_callback: Callable[[bool], Coroutine[Any, Any, None]]
     start_speaking_animation_callback: Callable[[bool], Coroutine[Any, Any, None]]
     stop_speaking_animation_callback: Callable[[bool], Coroutine[Any, Any, None]]
+    get_groups_callback: Callable[..., List[str]]
+    get_current_group_callback: Callable[..., str]
+    set_group_callback: Callable[[str], None]
     version: str
 
 
@@ -50,6 +53,9 @@ class WebUI:
             set_user_mute_behavior_callback: Callable[[bool], Coroutine[Any, Any, None]],
             start_speaking_animation_callback: Callable[[bool], Coroutine[Any, Any, None]],
             stop_speaking_animation_callback: Callable[[bool], Coroutine[Any, Any, None]],
+            get_groups_callback: Callable[..., List[str]],
+            set_group_callback: Callable[[str], None],
+            get_current_group_callback: Callable[..., str],
             version: str,
             host: str,
             port: int
@@ -71,6 +77,9 @@ class WebUI:
         self.set_user_mute_behavior_callback = set_user_mute_behavior_callback
         self.start_speaking_animation_callback = start_speaking_animation_callback
         self.stop_speaking_animation_callback = stop_speaking_animation_callback
+        self.get_groups_callback = get_groups_callback
+        self.set_group_callback = set_group_callback
+        self.get_current_group_callback = get_current_group_callback
         self.server = HTMLServer(host=host, port=port, root_path=path.dirname(__file__), logger=logger, title="Stream Control Panel")
         self.version = version
         # Main page
@@ -81,18 +90,21 @@ class WebUI:
         self.server.add_url_rule("/set_user_mute_behavior", self.set_user_mute_behavior, Protocol.Post)
         self.server.add_url_rule("/start_speaking_animation", self.start_speaking_animation, Protocol.Post)
         self.server.add_url_rule("/stop_speaking_animation", self.stop_speaking_animation, Protocol.Post)
-        self.server.add_url_rule("/get_settings", self.get_settings, disable_cache=True)
-        self.server.add_url_rule("/get_state", self.get_state, disable_cache=True)
-        self.server.add_url_rule("/connect_all", self.connect_all)
-        self.server.add_url_rule("/connect_obs", self.connect_obs)
-        self.server.add_url_rule("/connect_teamspeak", self.connect_teamspeak)
-        self.server.add_url_rule("/stop_all", self.stop_all)
+        self.server.add_url_rule("/settings", self.get_settings, disable_cache=True)
+        self.server.add_url_rule("/state", self.get_state, disable_cache=True)
+        self.server.add_url_rule("/connect_all", self.connect_all, Protocol.Post)
+        self.server.add_url_rule("/connect_obs", self.connect_obs, Protocol.Post)
+        self.server.add_url_rule("/connect_teamspeak", self.connect_teamspeak, Protocol.Post)
+        self.server.add_url_rule("/stop_all", self.stop_all, Protocol.Post)
         # Teamspeak
         self.server.add_url_rule("/teamspeak", self.teamspeak)
         self.server.add_url_rule("/get_teamspeak_user_map", self.ts_user_map)
         # OBS
         self.server.add_url_rule("/obs", self.obs)
-        self.server.add_url_rule("/get_obs_scenes", self.obs_scene_map)
+        self.server.add_url_rule("/current_group", self.get_current_group)
+        self.server.add_url_rule("/groups", self.get_groups)
+        self.server.add_url_rule("/group", self.set_group, Protocol.Post)
+        self.server.add_url_rule("/obs_scenes", self.obs_scene_map)
         self.server.add_url_rule("/reinit_obs", self.re_init_obs, Protocol.Post)
         # WebUI
         self.server.add_url_rule("/webui", self.webui)
@@ -137,6 +149,16 @@ class WebUI:
 
     async def stop_speaking_animation(self, url_data: UrlData) -> None:
         await self.stop_speaking_animation_callback(loads(url_data.data.decode())["value"])
+
+    async def get_groups(self, _: UrlData) -> str:
+        return dumps(self.get_groups_callback())
+
+    async def set_group(self, url_data: UrlData) -> str:
+        self.set_group_callback(loads(url_data.data.decode())["value"])
+        return "{}"
+
+    async def get_current_group(self, _: UrlData) -> str:
+        return dumps({ "group": self.get_current_group_callback() })
 
     def get_settings(self, _: UrlData) -> str:
         settings = self.get_settings_callback()

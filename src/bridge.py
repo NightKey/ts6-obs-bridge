@@ -3,7 +3,7 @@ from asyncio import sleep
 from functools import wraps
 from json import load
 from threading import Thread
-from typing import Tuple
+from typing import Tuple, List
 from os import path
 import time
 import atexit
@@ -14,6 +14,8 @@ from smdb_web_server import KnownError
 
 from modules import Settings, UserStatus, WebUI, Database, OBSConnector, TeamSpeak6Connector, OBSException, \
     TeamSpeakException, show_open_calls
+
+#Make threads for Teamspeak, OBS and web UI, bridge should bridge them together with requests
 
 def async_log_wrapped(func):
     @wraps(func)
@@ -38,6 +40,9 @@ class Bridge:
     version: str
     stop_event: asyncio.Event = asyncio.Event()
     closed: bool = False
+    teamspeak_thread: Thread = None
+    obs_thread: Thread = None
+    web_ui_thread: Thread = None
 
     def __init__(self, logger: Logger, version: str):
         loop = asyncio.new_event_loop()
@@ -131,6 +136,9 @@ class Bridge:
             set_user_mute_behavior_callback=self.set_user_mute_behavior,
             start_speaking_animation_callback=self.start_speaking_animation_callback,
             stop_speaking_animation_callback=self.stop_speaking_animation_callback,
+            get_groups_callback=self.get_groups,
+            set_group_callback=self.set_group,
+            get_current_group_callback=self.get_current_group,
             version=self.version,
             host=self.settings.host,
             port=self.settings.port
@@ -346,6 +354,15 @@ class Bridge:
         if not self.obs_connector.is_connected:
             raise KnownError("OBS not connected", 503)
         return self.obs_connector.get_scene_map()
+
+    def get_groups(self) -> List[str]:
+        return self.obs_connector.get_groups()
+
+    def get_current_group(self) -> str:
+        return self.obs_connector.current_group
+
+    def set_group(self, group: str) -> None:
+        self.obs_connector.select_group = group
 
 if __name__=="__main__":
     DATA_FOLDER = path.join(path.abspath('.'), "data")
