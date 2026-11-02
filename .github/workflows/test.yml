@@ -13,35 +13,28 @@ jobs:
       contents: write
 
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-    - name: Windows Build check
-      shell: cmd
-      run: |
-        call .\run_tests.bat
+      - name: Windows Build check
+        shell: cmd
+        run: |
+          call .\run_tests.bat
 
-    - name: Build Windows Executable
-      shell: cmd
-      run: |
-        call .\create_executable.bat ${{ github.ref_name }}
+      - name: Build Linux Executable
+        shell: cmd
+        run: |
+          docker build -t ts-obs-linux -f docker-test .
+          docker run --rm ts-obs-linux
 
-    - name: Build Linux Executable
-      shell: cmd
-      run: |
-        docker build --build-arg TAG=${{ github.ref_name }} -t ts-obs-linux -f docker .
-        docker create --name temp_linux ts-obs-linux
-        if not exist dist mkdir dist
-        docker rm temp_linux
-
-    - name: Cleanup
-      if: always()
-      shell: cmd
-      run: |
-        echo "Cleaning up local workspace build files..."
-        if exist "dist" rmdir /s /q "dist"
-        if exist "venv" rmdir /s /q "venv"
-        
-        echo "Cleaning up Docker builder cache and dangling images..."
-        docker image rm ts-obs-linux --force
-        docker system prune -f
+      - name: Cleanup
+        if: always()
+        shell: cmd
+        run: |
+          echo "Cleaning up local workspace build files..."
+          if exist "dist" rmdir /s /q "dist"
+          if exist "venv" rmdir /s /q "venv"
+          
+          echo "Cleaning up Docker builder cache and dangling images..."
+          docker image rm ts-obs-linux --force
+          docker system prune -f

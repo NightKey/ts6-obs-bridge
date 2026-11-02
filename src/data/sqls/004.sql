@@ -1,0 +1,5 @@
+BEGIN;
+
+ALTER TABLE settings DROP COLUMN obs_scene;
+
+COMMIT;

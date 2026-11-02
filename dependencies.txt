@@ -3,3 +3,4 @@ smdb-dbm
 smdb-web-server
 websockets
 aiosqlite
+pytest

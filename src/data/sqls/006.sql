@@ -1,0 +1,5 @@
+BEGIN;
+
+ALTER TABLE settings ADD COLUMN user_mute_behavior INTEGER DEFAULT 1;
+
+COMMIT;

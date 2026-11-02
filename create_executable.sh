@@ -53,6 +53,8 @@ cp "dist/TeamSpeak-OBS-Bridge-App/data/log_settings" "dist/TeamSpeak-OBS-Bridge-
 echo "$VERSION
 $BRANCH" > "dist/TeamSpeak-OBS-Bridge-App/data/version"
 cp "dist/TeamSpeak-OBS-Bridge-App/data/version" "dist/TeamSpeak-OBS-Bridge-App-Headless/data/version"
+cp -r "src/data/sqls" "dist/TeamSpeak-OBS-Bridge-App/_internal/modules/WebUI/templates"
+cp -r "src/data/sqls" "dist/TeamSpeak-OBS-Bridge-App-Headless/_internal/modules/WebUI/templates"
 
 echo "Creating WebUI folders"
 mkdir -p "./dist/TeamSpeak-OBS-Bridge-App/_internal/modules/WebUI"

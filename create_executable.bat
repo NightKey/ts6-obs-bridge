@@ -64,6 +64,8 @@ echo %VERSION% > "dist\TeamSpeak-OBS-Bridge-App\data\version" || exit /b 1
 echo %BRANCH%>> "dist\TeamSpeak-OBS-Bridge-App\data\version" || exit /b 1
 copy "dist\TeamSpeak-OBS-Bridge-App\data\log_settings" "dist\TeamSpeak-OBS-Bridge-App-Headless\data\log_settings"
 copy "dist\TeamSpeak-OBS-Bridge-App\data\version" "dist\TeamSpeak-OBS-Bridge-App-Headless\data\version"
+robocopy "src\data\sqls" "dist\TeamSpeak-OBS-Bridge-App\data\sqls" /e /copy:DAT /r:0
+robocopy "src\data\sqls" "dist\TeamSpeak-OBS-Bridge-App-Headless\data\sqls" /e /copy:DAT /r:0
 
 echo "Creating WebUI folders"
 mkdir "dist\TeamSpeak-OBS-Bridge-App\_internal\modules\WebUI\static" || exit /b 1
