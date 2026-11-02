@@ -19,25 +19,25 @@ class Database(DBManager):
         version = current
         while version != target:
             if version ==  Version(0, 0, 1):
-                await self.run_sql_update_script_unsafe(path.join(self.data_path, "002.sql"))
+                await self.run_sql_update_script_unsafe(path.join(self.data_path, "sqls", "002.sql"))
                 version = Version(0, 0, 2)
             if version == Version(0, 0, 2):
-                await self.run_sql_update_script_unsafe(path.join(self.data_path, "003.sql"))
+                await self.run_sql_update_script_unsafe(path.join(self.data_path, "sqls", "003.sql"))
                 version = Version(0, 0, 3)
             if version == Version(0, 0, 3):
-                await self.run_sql_update_script_unsafe(path.join(self.data_path, "004.sql"))
+                await self.run_sql_update_script_unsafe(path.join(self.data_path, "sqls", "004.sql"))
                 version = Version(0, 0, 4)
             if version == Version(0, 0, 4):
-                await self.run_sql_update_script_unsafe(path.join(self.data_path, "005.sql"))
+                await self.run_sql_update_script_unsafe(path.join(self.data_path, "sqls", "005.sql"))
                 version = Version(0, 0, 5)
             if version == Version(0, 0, 5):
-                await self.run_sql_update_script_unsafe(path.join(self.data_path, "006.sql"))
+                await self.run_sql_update_script_unsafe(path.join(self.data_path, "sqls", "006.sql"))
                 version = Version(0, 0, 6)
             if version == Version(0, 0, 6):
-                await self.run_sql_update_script_unsafe(path.join(self.data_path, "007.sql"))
+                await self.run_sql_update_script_unsafe(path.join(self.data_path, "sqls", "007.sql"))
                 version = Version(0, 0, 7)
             if version == Version(0, 0, 7):
-                await self.run_sql_update_script_unsafe(path.join(self.data_path, "008.sql"))
+                await self.run_sql_update_script_unsafe(path.join(self.data_path, "sqls", "008.sql"))
                 version = Version(0, 0, 8)
         return True
 

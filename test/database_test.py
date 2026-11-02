@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from src.modules import Database, Settings, TeamSpeakSettings, OBSSettings
+from modules import Database, Settings, TeamSpeakSettings, OBSSettings
 from smdb_logger import Logger, LEVEL
 from smdb_db_manager import DBManager
 

@@ -35,7 +35,7 @@ FROM settings;
 
 INSERT INTO teamspeak_settings
     (id, ip, port, api, user_mute_behavior)
-SELECT rowid, teamspeak_ip, teamspeak_port, teamspeak_api
+SELECT rowid, teamspeak_ip, teamspeak_port, teamspeak_api, user_mute_behavior
 FROM settings;
 
 INSERT INTO obs_settings
