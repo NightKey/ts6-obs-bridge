@@ -182,6 +182,9 @@ class OBSConnector(BaseConnector):
         if self.watchdog_loop_task is None:
             self.stopped.set()
 
+    def check_user_has(self, user: str, status: UserStatus) -> bool:
+        return status in self.user_scenes[user].current_subitems.keys()
+
     @async_wrapped
     async def __cleanup(self) -> None:
         self.logger.info("Cleanup")
