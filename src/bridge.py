@@ -304,12 +304,12 @@ class Bridge:
     @async_log_wrapped
     async def user_state_changed(self, user: str, target_state: UserStatus) -> None:
         self.logger.debug(f"Change state requested for {user} -> {target_state}")
-        if target_state.value == UserStatus.Speaking.value and self.settings.speak_start_animation_enabled:
+        if target_state.value == UserStatus.Speaking.value and self.settings.speak_start_animation_enabled and self.obs_connector.check_user_has(user, UserStatus.StartSpeaking):
             self.logger.trace("Speak start animation enabled")
             await self.obs_connector.set_user_to(user, UserStatus.StartSpeaking)
             self.logger.trace("Speak start set")
             time.sleep(.05)
-        elif target_state.value == UserStatus.Quiet.value and self.settings.speak_end_animation_enabled:
+        elif target_state.value == UserStatus.Quiet.value and self.settings.speak_end_animation_enabled and self.obs_connector.check_user_has(user, UserStatus.StartSpeaking):
             self.logger.trace("Speak end animation enabled")
             await self.obs_connector.set_user_to(user, UserStatus.StopSpeaking)
             self.logger.trace("Speak end set")
